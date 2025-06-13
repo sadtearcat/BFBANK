@@ -1,0 +1,24 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Force LF for Dart files
+*.dart text eol=lf
+
+# Force LF for YAML files
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Force LF for Kotlin files
+*.kt text eol=lf
+
+# Force LF for configuration files
+*.json text eol=lf
+*.md text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary 
