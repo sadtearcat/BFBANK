@@ -1,9 +1,3 @@
-````markdown
-# Barrier Free Bank (BFBANK)
-
-> **Copy‑paste ready.** Plain Markdown + minimal HTML only. English is expanded by default; Korean can be toggled via `<details>`.
-
----
 
 <details open>
 <summary><strong>🇬🇧 English</strong></summary>
@@ -35,7 +29,7 @@ $ flutter pub get
 
 # 4 Run
 $ flutter run
-````
+```
 
 #### Project Structure
 
@@ -181,4 +175,4 @@ lib/
 © 2025 Barrier Free Bank. 모든 권리 보유. 본 저장소는 비공개이며 외부 사용이 허가되지 않습니다.
 
 </details>
-```
+
