@@ -5,6 +5,8 @@ import 'package:ultralytics_yolo/yolo_view.dart';
 import 'package:ultralytics_yolo/yolo_streaming_config.dart';
 import '../../../../services/gallery_service.dart';
 import '../../../../services/object_crop_service.dart';
+import '../../../../services/ocr_queue_service.dart';
+import '../../../../core/models/crop.dart';
 
 class CameraDetectionPage extends StatefulWidget {
   const CameraDetectionPage({super.key});
@@ -20,10 +22,14 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
   
   // 서비스들
   final GalleryService _galleryService = GalleryService();
+  final OcrQueueService _ocrQueueService = OcrQueueService();
   late final ObjectCropService _cropService;
   
   // 로컬 갤러리 (최근 몇 개만 미리보기용)
   List<Uint8List> _recentCrops = [];
+  
+  // OCR 결과
+  List<String> _recentOcrResults = [];
   
   // YOLO 컨트롤러
   final YOLOViewController _controller = YOLOViewController();
@@ -35,7 +41,11 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
     // 크롭 서비스 초기화
     _cropService = ObjectCropService(_galleryService);
     
+    // OCR 큐 시작 (Application 초기화 시 호출)
+    _ocrQueueService.start(onOcrReady: _onOcrReady);
+    
     print('[INIT] CameraDetectionPage initState called');
+    print('[INIT] OCR queue started');
     
     // 위젯 빌드 완료 후 스트리밍 설정
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,7 +74,27 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
   @override
   void dispose() {
     _controller.stop();
+    _ocrQueueService.stop();
     super.dispose();
+  }
+  
+  /// OCR 결과 처리 콜백
+  void _onOcrReady(Crop crop, String text) {
+    if (!mounted) return;
+    
+    print('[OCR_RESULT] ${crop.debugInfo} -> "$text"');
+    
+    // 갤러리의 해당 DetectedObject에 OCR 결과 업데이트
+    _galleryService.updateOcrResult(crop.id, text);
+    
+    setState(() {
+      _recentOcrResults.add(text);
+      
+      // 최대 20개까지만 유지
+      if (_recentOcrResults.length > 20) {
+        _recentOcrResults = _recentOcrResults.sublist(_recentOcrResults.length - 20);
+      }
+    });
   }
 
   // 스트리밍 데이터 처리 - 클린한 버전
@@ -120,6 +150,17 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
         ),
         backgroundColor: Colors.black,
         actions: [
+          // OCR 큐 상태
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              'OCR: ${_ocrQueueService.queueLength}',
+              style: TextStyle(
+                color: _ocrQueueService.isProcessing ? Colors.red : Colors.purple, 
+                fontSize: 12
+              ),
+            ),
+          ),
           // 갤러리 개수
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -163,6 +204,69 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
                 includeProcessingTimeMs: true,
                 maxFPS: 10,
               ),
+            ),
+          ),
+          
+          // OCR 결과 섹션
+          Container(
+            height: 80,
+            color: Colors.grey[800],
+            child: Column(
+              children: [
+                // OCR 헤더
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.text_fields, color: Colors.purple, size: 16),
+                      const SizedBox(width: 8),
+                      Text(
+                        'OCR Results (${_recentOcrResults.length})',
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'Queue: ${_ocrQueueService.queueLength}/${_ocrQueueService.totalProcessed}',
+                        style: const TextStyle(color: Colors.purple, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // OCR 결과 리스트
+                Expanded(
+                  child: _recentOcrResults.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No OCR results yet',
+                            style: TextStyle(color: Colors.grey, fontSize: 11),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _recentOcrResults.length,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              constraints: const BoxConstraints(maxWidth: 200),
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.purple.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: Colors.purple.withOpacity(0.5)),
+                              ),
+                              child: Text(
+                                _recentOcrResults[index],
+                                style: const TextStyle(color: Colors.white, fontSize: 10),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
             ),
           ),
           

@@ -4,10 +4,14 @@ import 'package:flutter/foundation.dart';
 import 'coordinate_transformer.dart';
 import 'image_processing_service.dart';
 import 'gallery_service.dart';
+import 'ocr_queue_service.dart';
+import '../core/models/crop.dart';
+import '../core/models/detected_object.dart';
 
 /// 객체 탐지 결과 처리 및 크롭 서비스
 class ObjectCropService {
   final GalleryService _galleryService;
+  final OcrQueueService _ocrQueueService = OcrQueueService();
   
   ObjectCropService(this._galleryService);
   
@@ -57,6 +61,68 @@ class ObjectCropService {
     }
     
     return cropRects;
+  }
+
+  /// DetectedObject로 갤러리에 추가 (OCR 연동을 위해)
+  void _addDetectedObjectsToGallery(List<Uint8List> croppedImages, List<dynamic> detections) {
+    print('[GALLERY] Adding ${croppedImages.length} DetectedObjects to gallery');
+    
+    for (int i = 0; i < croppedImages.length && i < detections.length; i++) {
+      try {
+        final jpegBytes = croppedImages[i];
+        final detection = detections[i];
+        final className = detection['className'] as String? ?? 'ID_CARD';
+        final confidence = (detection['confidence'] as num?)?.toDouble() ?? 0.0;
+        
+        final detectedObject = DetectedObject(
+          id: 'object_${DateTime.now().millisecondsSinceEpoch}_$i',
+          imageBytes: jpegBytes,
+          timestamp: DateTime.now(),
+          className: className,
+          confidence: confidence,
+          // OCR 결과는 나중에 업데이트됨
+        );
+        
+        _galleryService.addDetectedObject(detectedObject);
+        print('[GALLERY] Added DetectedObject: ${detectedObject.id}');
+        
+      } catch (e) {
+        print('[GALLERY] Error adding DetectedObject $i: $e');
+      }
+    }
+  }
+
+  /// OCR 큐에 기존 JPEG 크롭 이미지들 추가 (기존 로직 재사용)
+  void _addToOcrQueue(List<Uint8List> croppedImages, List<dynamic> detections) {
+    print('[OCR_QUEUE] Adding ${croppedImages.length} JPEG crops to OCR queue');
+    
+    for (int i = 0; i < croppedImages.length && i < detections.length; i++) {
+      try {
+        final jpegBytes = croppedImages[i];
+        final detection = detections[i];
+        final className = detection['className'] as String? ?? 'ID_CARD';
+        final confidence = (detection['confidence'] as num?)?.toDouble() ?? 0.0;
+        
+        final crop = Crop(
+          jpegBytes: jpegBytes,
+          id: 'object_${DateTime.now().millisecondsSinceEpoch}_$i', // DetectedObject와 동일한 ID
+          timestamp: DateTime.now(),
+          className: className,
+          confidence: confidence,
+        );
+        
+        // OCR 큐에 추가 (※ label 체크 불필요 - 항상 신분증으로 간주)
+        final enqueued = _ocrQueueService.enqueue(crop);
+        if (enqueued) {
+          print('[OCR_QUEUE] Enqueued: ${crop.debugInfo}');
+        } else {
+          print('[OCR_QUEUE] Failed to enqueue: ${crop.debugInfo}');
+        }
+        
+      } catch (e) {
+        print('[OCR_QUEUE] Error adding crop $i to OCR queue: $e');
+      }
+    }
   }
   
   /// 메인 처리 함수 - 스트리밍 데이터를 받아서 크롭 처리
@@ -113,9 +179,15 @@ class ObjectCropService {
     );
     
     if (croppedImages.isNotEmpty) {
-      // 갤러리에 추가
+      // (A) 기존 디버깅용 파일 저장 그대로 유지 - 갤러리에 추가
       _galleryService.addCroppedImages(croppedImages);
       print('[CROP] ${croppedImages.length} objects cropped, total gallery: ${_galleryService.count}');
+      
+      // (A-2) DetectedObject로 갤러리에 추가 (OCR 연동을 위해)
+      _addDetectedObjectsToGallery(croppedImages, highConfidenceDetections);
+      
+      // (B) OCR 큐에 기존 JPEG 크롭 추가 (기존 로직 재사용)
+      _addToOcrQueue(croppedImages, highConfidenceDetections);
     }
     
     return croppedImages;

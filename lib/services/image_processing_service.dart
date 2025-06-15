@@ -5,7 +5,7 @@ import 'package:image/image.dart' as img;
 
 /// 이미지 처리 (회전, 크롭) 서비스
 class ImageProcessingService {
-  /// Isolate에서 실행되는 크롭 함수
+  /// Isolate에서 실행되는 크롭 함수 (기존 로직 유지)
   static Future<Uint8List> _cropInIsolate(Map<String, dynamic> params) async {
     final originalBytes = params['bytes'] as Uint8List;
     final rect = params['rect'] as Rect;
@@ -29,7 +29,7 @@ class ImageProcessingService {
     
     return Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
   }
-  
+
   /// 단일 객체 크롭 처리
   static Future<Uint8List?> cropSingleObject({
     required Uint8List imageBytes,
@@ -48,7 +48,7 @@ class ImageProcessingService {
     });
   }
   
-  /// 여러 객체 동시 크롭 처리
+  /// 여러 객체 동시 크롭 처리 (기존 로직 그대로 유지)
   static Future<List<Uint8List>> cropMultipleObjects({
     required Uint8List imageBytes,
     required List<Rect> cropRects,
@@ -67,7 +67,7 @@ class ImageProcessingService {
     
     return await Future.wait(futures);
   }
-  
+
   /// 이미지 크기 정보 추출
   static Future<Size> getImageSize(Uint8List imageBytes) async {
     final codec = await instantiateImageCodec(imageBytes);
