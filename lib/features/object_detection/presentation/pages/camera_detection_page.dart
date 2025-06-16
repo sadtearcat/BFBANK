@@ -5,8 +5,7 @@ import 'package:ultralytics_yolo/yolo_view.dart';
 import 'package:ultralytics_yolo/yolo_streaming_config.dart';
 import '../../../../services/gallery_service.dart';
 import '../../../../services/object_crop_service.dart';
-import '../../../../services/ocr_queue_service.dart';
-import '../../../../core/models/crop.dart';
+import '../../../object_ocr/object_ocr.dart';
 
 class CameraDetectionPage extends StatefulWidget {
   const CameraDetectionPage({super.key});
@@ -79,16 +78,18 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
   }
   
   /// OCR 결과 처리 콜백
-  void _onOcrReady(Crop crop, String text) {
+  void _onOcrReady(Crop crop, OcrResult result) {
     if (!mounted) return;
     
-    print('[OCR_RESULT] ${crop.debugInfo} -> "$text"');
+    print('[OCR_RESULT] ${crop.debugInfo} -> "${result.text}" (${result.displayConfidence})');
     
-    // 갤러리의 해당 DetectedObject에 OCR 결과 업데이트
-    _galleryService.updateOcrResult(crop.id, text);
+    // 갤러리의 해당 DetectedObject에 상세한 OCR 결과 업데이트
+    _galleryService.updateDetailedOcrResult(crop.id, result);
     
     setState(() {
-      _recentOcrResults.add(text);
+      // 신뢰도 정보를 포함한 텍스트 추가
+      final ocrResultWithConfidence = '${result.text} (${result.displayConfidence})';
+      _recentOcrResults.add(ocrResultWithConfidence);
       
       // 최대 20개까지만 유지
       if (_recentOcrResults.length > 20) {
@@ -150,15 +151,23 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
         ),
         backgroundColor: Colors.black,
         actions: [
-          // OCR 큐 상태
+          // OCR 큐 상태 (개선된 정보)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Text(
-              'OCR: ${_ocrQueueService.queueLength}',
+              'OCR: ${_ocrQueueService.queueLength}/${_ocrQueueService.totalProcessed}',
               style: TextStyle(
                 color: _ocrQueueService.isProcessing ? Colors.red : Colors.purple, 
                 fontSize: 12
               ),
+            ),
+          ),
+          // 최대 큐 길이 표시
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Text(
+              'Max: ${_ocrQueueService.maxQueueLength}',
+              style: const TextStyle(color: Colors.orange, fontSize: 10),
             ),
           ),
           // 갤러리 개수

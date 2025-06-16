@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'coordinate_transformer.dart';
 import 'image_processing_service.dart';
 import 'gallery_service.dart';
-import 'ocr_queue_service.dart';
-import '../core/models/crop.dart';
+import '../features/object_ocr/object_ocr.dart';
 import '../core/models/detected_object.dart';
 
 /// 객체 탐지 결과 처리 및 크롭 서비스

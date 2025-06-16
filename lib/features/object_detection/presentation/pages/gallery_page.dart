@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../../../../services/gallery_service.dart';
 import '../../../../core/models/detected_object.dart';
+import '../../../object_ocr/object_ocr.dart';
 
 class GalleryPage extends StatefulWidget {
   final List<Uint8List> croppedImages;
@@ -106,9 +107,15 @@ class _GalleryPageState extends State<GalleryPage> {
                                 topLeft: Radius.circular(10),
                                 topRight: Radius.circular(10),
                               ),
-                              child: Image.memory(
-                                detectedObject.imageBytes,
-                                fit: BoxFit.cover,
+                              child: OcrOverlayWidget(
+                                ocrResult: detectedObject.ocrResult,
+                                showBoxes: detectedObject.ocrResult != null,
+                                showConfidence: true,
+                                confidenceThreshold: 0.6,
+                                child: Image.memory(
+                                  detectedObject.imageBytes,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                           ),
@@ -138,6 +145,27 @@ class _GalleryPageState extends State<GalleryPage> {
                               textAlign: TextAlign.center,
                             ),
                           ),
+                          // OCR 신뢰도 표시 (있는 경우)
+                          if (detectedObject.hasOcrConfidence)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.3),
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                'Confidence: ${detectedObject.displayOcrConfidence}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -200,9 +228,15 @@ class _FullScreenObjectPage extends StatelessWidget {
                 child: InteractiveViewer(
                   minScale: 0.5,
                   maxScale: 3.0,
-                  child: Image.memory(
-                    detectedObject.imageBytes,
-                    fit: BoxFit.contain,
+                  child: OcrOverlayWidget(
+                    ocrResult: detectedObject.ocrResult,
+                    showBoxes: detectedObject.ocrResult != null,
+                    showConfidence: true,
+                    confidenceThreshold: 0.6,
+                    child: Image.memory(
+                      detectedObject.imageBytes,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -261,6 +295,29 @@ class _FullScreenObjectPage extends StatelessWidget {
                   ),
                 ),
                 
+                // OCR 신뢰도 (있는 경우)
+                if (detectedObject.hasOcrConfidence) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.bar_chart,
+                        color: Colors.orange,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'OCR Confidence: ${detectedObject.displayOcrConfidence}',
+                        style: const TextStyle(
+                          color: Colors.orange,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                
                 const SizedBox(height: 16),
                 
                 // 추가 정보
@@ -273,7 +330,7 @@ class _FullScreenObjectPage extends StatelessWidget {
                 ],
                 if (detectedObject.confidence != null) ...[
                   Text(
-                    'Confidence: ${(detectedObject.confidence! * 100).toStringAsFixed(1)}%',
+                    'YOLO Confidence: ${(detectedObject.confidence! * 100).toStringAsFixed(1)}%',
                     style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                   const SizedBox(height: 4),

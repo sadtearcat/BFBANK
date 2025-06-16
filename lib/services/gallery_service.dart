@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import '../core/models/detected_object.dart';
+import '../features/object_ocr/models/ocr_result.dart';
 
 class GalleryService extends ChangeNotifier {
   static final GalleryService _instance = GalleryService._internal();
@@ -76,6 +77,28 @@ class GalleryService extends ChangeNotifier {
     for (int i = 0; i < _detectedObjects.length; i++) {
       if (_detectedObjects[i].id == objectId) {
         _detectedObjects[i] = _detectedObjects[i].withOcrText(ocrText);
+        notifyListeners();
+        break;
+      }
+    }
+  }
+
+  /// OCR 결과와 신뢰도 업데이트 (새로운 메서드)
+  void updateOcrResultWithConfidence(String objectId, String ocrText, double confidence) {
+    for (int i = 0; i < _detectedObjects.length; i++) {
+      if (_detectedObjects[i].id == objectId) {
+        _detectedObjects[i] = _detectedObjects[i].withOcrResult(ocrText, confidence);
+        notifyListeners();
+        break;
+      }
+    }
+  }
+
+  /// 상세한 OCR 결과 업데이트 (박스 정보 포함)
+  void updateDetailedOcrResult(String objectId, OcrResult ocrResult) {
+    for (int i = 0; i < _detectedObjects.length; i++) {
+      if (_detectedObjects[i].id == objectId) {
+        _detectedObjects[i] = _detectedObjects[i].withDetailedOcrResult(ocrResult);
         notifyListeners();
         break;
       }
