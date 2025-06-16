@@ -54,17 +54,18 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
       print('[INIT] Widget mounted: $mounted');
       
       if (_controller.isInitialized && mounted) {
-        print('[INIT] Applying streaming config with originalImage=true');
+        print('[INIT] Applying streaming config for OBB model');
         _controller.setStreamingConfig(
           const YOLOStreamingConfig(
             includeOriginalImage: true,
-            includeDetections: true,
+            includeDetections: true,  // OBB 데이터를 받으려면 true여야 함
+            includeOBB: true,
             includeFps: true,
             includeProcessingTimeMs: true,
-            maxFPS: 10,
+            maxFPS: 15,  // 15fps로 조절
           ),
         );
-        print('[INIT] Streaming config applied');
+        print('[INIT] OBB streaming config applied');
       } else {
         print('[INIT] Skipping config - controller not ready or widget not mounted');
       }
@@ -97,7 +98,7 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
     });
   }
 
-  // 스트리밍 데이터 처리 - 클린한 버전
+  // 스트리밍 데이터 처리 - OBB 모델 전용
   void _onStreamingData(Map<String, dynamic> data) async {
     if (!mounted) return;
     
@@ -105,12 +106,12 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
     print('[YOLO] onStreamingData called with keys: ${data.keys.toList()}');
     
     final fps = (data['fps'] as num?)?.toDouble() ?? 0.0;
-    final detectionsRaw = data['detections'] as List<dynamic>?;
+    final obbDataRaw = data['detections'] as List<dynamic>?;  // Native 수정 후 OBB 데이터가 detections 키로 전달됨
     
     // UI 상태 업데이트
     setState(() {
       _currentFPS = fps;
-      _currentDetections = detectionsRaw?.length ?? 0;
+      _currentDetections = obbDataRaw?.length ?? 0;
     });
     
     // 크롭 서비스에 위임
@@ -194,15 +195,16 @@ class _CameraDetectionPageState extends State<CameraDetectionPage> {
             flex: 3,
             child: YOLOView(
               controller: _controller,
-              modelPath: 'ddd',
-              task: YOLOTask.detect,
+              modelPath: 'yolo8n-obb',
+              task: YOLOTask.obb,
               onStreamingData: _onStreamingData,
               streamingConfig: const YOLOStreamingConfig(
                 includeOriginalImage: true,
-                includeDetections: true,
+                includeDetections: true,  // OBB 데이터를 받으려면 true여야 함
+                includeOBB: true,
                 includeFps: true,
                 includeProcessingTimeMs: true,
-                maxFPS: 10,
+                maxFPS: 15,  // 15fps로 조절
               ),
             ),
           ),
