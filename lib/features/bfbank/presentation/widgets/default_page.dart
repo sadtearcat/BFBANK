@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../data/services/haptic_service.dart';
+import '../../data/services/tts_service.dart';
+import 'haptic_button.dart';
 
 class DefaultPage extends StatelessWidget {
   final Widget? upperLeftWidget;
@@ -10,6 +13,11 @@ class DefaultPage extends StatelessWidget {
   final VoidCallback? onUpperRightPress;
   final VoidCallback? onLowerLeftPress;
   final VoidCallback? onLowerRightPress;
+  // 더블탭 TTS 메시지들
+  final String? upperLeftTTS;
+  final String? upperRightTTS;
+  final String? lowerLeftTTS;
+  final String? lowerRightTTS;
 
   const DefaultPage({
     Key? key,
@@ -22,6 +30,10 @@ class DefaultPage extends StatelessWidget {
     this.onUpperRightPress,
     this.onLowerLeftPress,
     this.onLowerRightPress,
+    this.upperLeftTTS,
+    this.upperRightTTS,
+    this.lowerLeftTTS,
+    this.lowerRightTTS,
   }) : super(key: key);
 
   @override
@@ -45,6 +57,7 @@ class DefaultPage extends StatelessWidget {
                         upperLeftWidget,
                         onUpperLeftPress,
                         const Color(0xFF1C2C58),
+                        upperLeftTTS,
                       ),
                     ),
                   ),
@@ -56,6 +69,7 @@ class DefaultPage extends StatelessWidget {
                         upperRightWidget,
                         onUpperRightPress,
                         const Color(0xFF3A3A3C),
+                        upperRightTTS,
                       ),
                     ),
                   ),
@@ -96,6 +110,7 @@ class DefaultPage extends StatelessWidget {
                         lowerLeftWidget,
                         onLowerLeftPress,
                         const Color(0xFF7B61FF),
+                        lowerLeftTTS,
                       ),
                     ),
                   ),
@@ -107,6 +122,7 @@ class DefaultPage extends StatelessWidget {
                         lowerRightWidget,
                         onLowerRightPress,
                         const Color(0xFF34C759),
+                        lowerRightTTS,
                       ),
                     ),
                   ),
@@ -119,21 +135,44 @@ class DefaultPage extends StatelessWidget {
     );
   }
 
-  Widget _buildButton(Widget? content, VoidCallback? onPressed, Color backgroundColor) {
-    return Container(
+  Widget _buildButton(Widget? content, VoidCallback? onPressed, Color backgroundColor, String? ttsMessage) {
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: backgroundColor,
-          shape: RoundedRectangleBorder(
+      child: ttsMessage != null 
+        ? HapticDoubleTapButton(
+            onSingleTap: () {
+              TtsService().speak(ttsMessage);
+            },
+            onDoubleTap: onPressed,
+            singleTapHapticType: 'tick',
+            doubleTapHapticType: 'double_tick',
+            backgroundColor: backgroundColor,
             borderRadius: BorderRadius.circular(20),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: content ?? Container(),
+            ),
+          )
+        : ElevatedButton(
+            onPressed: onPressed != null ? () {
+              // 기본 햅틱 피드백 적용 (더블탭이 아닌 경우)
+              HapticService.instance.vibrateCustomSequence('tick');
+              onPressed();
+            } : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: backgroundColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: content ?? Container(),
+            ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
-        ),
-        child: content ?? Container(),
-      ),
     );
   }
 } 

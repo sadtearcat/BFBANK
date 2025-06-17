@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/haptic_service.dart';
+import '../../data/services/integrated_dummy_data_service.dart';
 
 class BFBankMainPage extends StatefulWidget {
   const BFBankMainPage({Key? key}) : super(key: key);
@@ -13,16 +14,22 @@ class BFBankMainPage extends StatefulWidget {
 class _BFBankMainPageState extends State<BFBankMainPage> {
   final TtsService _ttsService = TtsService();
   final HapticService _hapticService = HapticService();
-  final String userName = "사용자"; // 실제로는 사용자 상태에서 가져와야 함
+  late String userName;
 
   @override
   void initState() {
     super.initState();
     _initializeServices();
+    _loadUserData();
     // 페이지 진입 시 자동으로 TTS 안내와 환영 햅틱
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _welcomeUser();
     });
+  }
+
+  void _loadUserData() {
+    final user = IntegratedDummyDataService.getCurrentUser();
+    userName = user.username;
   }
 
   Future<void> _initializeServices() async {
@@ -39,13 +46,12 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
   }
 
   void _speakMainScreenGuide() {
-    const guide = '''
-    메인 화면입니다.
-    결제를 원하시면 왼쪽 위,
-    설정을 원하시면 오른쪽 위,
-    계좌 조회를 원하시면 왼쪽 아래,
-    송금을 원하시면 오른쪽 아래를 눌러주세요.
-    ''';
+    // React Native와 정확히 동일한 메시지
+    const guide = '''메인 화면입니다.
+결제를 원하시면 왼쪽 위,
+설정을 원하시면 오른쪽 위,
+계좌 조회를 원하시면 왼쪽 아래,
+송금을 원하시면 오른쪽 아래를 눌러주세요.''';
     _ttsService.speak(guide);
   }
 
@@ -83,6 +89,11 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
           onUpperRightPress: () => _handleNavigation(context, '설정'),
           onLowerLeftPress: () => _handleNavigation(context, '조회'),
           onLowerRightPress: () => _handleNavigation(context, '송금'),
+          // 더블탭 TTS 메시지들
+          upperLeftTTS: '결제',
+          upperRightTTS: '설정',
+          lowerLeftTTS: '조회',
+          lowerRightTTS: '송금',
         ),
       ),
     );
@@ -91,19 +102,25 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
   Widget _buildButtonContent(IconData icon, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
-          size: 60,
+          size: 48, // 아이콘 크기 줄임
           color: Colors.white,
         ),
-        const SizedBox(height: 10),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 28,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+        const SizedBox(height: 6), // 간격 줄임
+        Flexible(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 24, // 폰트 크기 줄임
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -169,43 +186,12 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
             height: 1.2,
           ),
         ),
-        const SizedBox(height: 30),
-        // 디버그용: 햅틱 테스트 버튼들
-        if (const bool.fromEnvironment('dart.vm.product') == false) ...[
-          const Text(
-            '햅틱 테스트:',
-            style: TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 10,
-            children: [
-              _buildHapticTestButton('성공', 'success'),
-              _buildHapticTestButton('에러', 'error'),
-              _buildHapticTestButton('경고', 'warning'),
-              _buildHapticTestButton('심장박동', 'heartbeat_start'),
-              _buildHapticTestButton('중지', 'heartbeat_stop'),
-            ],
-          ),
-        ],
+
       ],
     );
   }
 
-  Widget _buildHapticTestButton(String label, String hapticType) {
-    return ElevatedButton(
-      onPressed: () {
-        _hapticService.vibrateCustomSequence(hapticType);
-        _ttsService.speak('$label 햅틱');
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.grey[800],
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      child: Text(label, style: const TextStyle(fontSize: 12)),
-    );
-  }
+
 
   void _handleNavigation(BuildContext context, String feature) {
     // 각 기능별 특화된 햅틱 패턴
@@ -231,25 +217,42 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
     _hapticService.vibrateCustomSequence(hapticPattern);
     _ttsService.speak('$feature 기능을 선택하셨습니다.');
     
-    // 임시로 다이얼로그 표시 (백엔드 연결 전 확인용)
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('$feature 기능'),
-          content: Text('$feature 기능이 선택되었습니다.\n(백엔드 연결 전 임시 화면)'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                _hapticService.vibrateCustomSequence('tick');
-                Navigator.of(context).pop();
-                _ttsService.speak('이전 화면으로 돌아갑니다.');
-              },
-              child: const Text('확인'),
-            ),
-          ],
+    // 실제 페이지 이동 또는 임시 다이얼로그
+    switch (feature) {
+      case '결제':
+        Navigator.pushNamed(context, '/payment');
+        break;
+      case '송금':
+        Navigator.pushNamed(context, '/send-main');
+        break;
+      case '조회':
+        Navigator.pushNamed(context, '/check-history');
+        break;
+      case '설정':
+        Navigator.pushNamed(context, '/settings');
+        break;
+      default:
+        // 다른 기능들은 임시로 다이얼로그 표시
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('$feature 기능'),
+              content: Text('$feature 기능이 선택되었습니다.\n(백엔드 연결 전 임시 화면)'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _hapticService.vibrateCustomSequence('tick');
+                    Navigator.of(context).pop();
+                    _ttsService.speak('이전 화면으로 돌아갑니다.');
+                  },
+                  child: const Text('확인'),
+                ),
+              ],
+            );
+          },
         );
-      },
-    );
+        break;
+    }
   }
 } 
