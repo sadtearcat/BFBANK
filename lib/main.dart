@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'routes.dart';
 import 'features/bfbank/data/services/global_tts_manager.dart';
+import 'features/bfbank/data/services/dev_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 개발 환경 설정 정보 출력
+  DevConfig.printDevInfo();
   
   // 앱 시작 시 전역 TTS 매니저 초기화
   await GlobalTtsManager().initialize();

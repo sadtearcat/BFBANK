@@ -5,6 +5,7 @@ import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/haptic_service.dart';
 import '../../data/services/integrated_dummy_data_service.dart';
+import '../../data/services/dev_config.dart';
 import '../../data/models/transaction_history.dart';
 
 class CheckHistoryPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
   
   List<TransactionHistory> _histories = [];
   bool _isLoading = true;
-  bool _hasAccount = true; // 임시로 true
+  bool _hasAccount = DevConfig.enableAutoAccountAssignment; // DevConfig로 제어
   int _currentIndex = 0;
 
   @override
@@ -44,11 +45,11 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
     setState(() => _isLoading = true);
     
     try {
-      // 실제로는 계좌 ID를 사용해서 API 호출
+      // 개발 단계: 더미 계좌와 거래 내역을 자동으로 부여
       final histories = await IntegratedDummyDataService.fetchTransactionHistories();
       setState(() {
         _histories = histories;
-        _hasAccount = histories.isNotEmpty;
+        _hasAccount = DevConfig.enableAutoAccountAssignment; // DevConfig로 제어
       });
       
       // 첫 번째 내역 자동 읽기
@@ -57,7 +58,11 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
       }
     } catch (error) {
       print('Error loading histories: $error');
-      setState(() => _hasAccount = false);
+      // 에러가 발생해도 더미 데이터로 처리
+      setState(() {
+        _histories = IntegratedDummyDataService.getTransactionHistories();
+        _hasAccount = DevConfig.enableAutoAccountAssignment;
+      });
     } finally {
       setState(() => _isLoading = false);
     }
@@ -109,9 +114,10 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
       );
     }
 
-    if (!_hasAccount || _histories.isEmpty) {
-      return _buildNoAccountView();
-    }
+    // 개발 단계에서는 항상 계좌가 있는 것으로 처리
+    // if (!_hasAccount || _histories.isEmpty) {
+    //   return _buildNoAccountView();
+    // }
 
     return Scaffold(
       backgroundColor: Colors.black,

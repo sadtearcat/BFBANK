@@ -2,6 +2,7 @@ import '../models/user_info.dart';
 import '../models/account_info.dart';
 import '../models/favorite_account.dart';
 import '../models/transaction_history.dart';
+import 'dev_config.dart';
 
 class IntegratedDummyDataService {
   // 싱글톤 패턴
@@ -11,6 +12,11 @@ class IntegratedDummyDataService {
 
   // 현재 로그인된 사용자 정보
   static UserInfo getCurrentUser() {
+    if (!DevConfig.shouldUseDummyData('user')) {
+      throw Exception('더미 사용자 데이터가 비활성화되어 있습니다.');
+    }
+    
+    DevConfig.debugLog('더미 사용자 정보 반환');
     return UserInfo(
       id: 1,
       username: '홍길동',
@@ -27,6 +33,11 @@ class IntegratedDummyDataService {
 
   // 현재 사용자의 계좌 정보
   static AccountInfo getCurrentUserAccount() {
+    if (!DevConfig.shouldUseDummyData('account')) {
+      throw Exception('더미 계좌 데이터가 비활성화되어 있습니다.');
+    }
+    
+    DevConfig.debugLog('더미 계좌 정보 반환');
     return AccountInfo(
       id: 1,
       accountNo: '1102620007201',
@@ -44,6 +55,12 @@ class IntegratedDummyDataService {
 
   // 자주 사용하는 계좌 목록
   static List<FavoriteAccount> getFavoriteAccounts() {
+    if (!DevConfig.shouldUseDummyData('favorite')) {
+      DevConfig.debugLog('더미 즐겨찾기 계좌 비활성화 - 빈 목록 반환');
+      return [];
+    }
+    
+    DevConfig.debugLog('더미 즐겨찾기 계좌 목록 반환');
     return [
       FavoriteAccount(
         id: 1,
@@ -86,6 +103,12 @@ class IntegratedDummyDataService {
 
   // 거래 내역 (더 풍부한 데이터로 확장)
   static List<TransactionHistory> getTransactionHistories() {
+    if (!DevConfig.shouldUseDummyData('transaction')) {
+      DevConfig.debugLog('더미 거래 내역 비활성화 - 빈 목록 반환');
+      return [];
+    }
+    
+    DevConfig.debugLog('더미 거래 내역 목록 반환 (15개)');
     return [
       // 최근 거래들
       TransactionHistory(
@@ -264,28 +287,28 @@ class IntegratedDummyDataService {
 
   // API 호출 시뮬레이션 메서드들
   static Future<UserInfo> fetchUserInfo() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await DevConfig.simulateApiDelay();
     return getCurrentUser();
   }
 
   static Future<AccountInfo> fetchAccountInfo() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await DevConfig.simulateApiDelay();
     return getCurrentUserAccount();
   }
 
   static Future<List<FavoriteAccount>> fetchFavoriteAccounts() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await DevConfig.simulateApiDelay();
     return getFavoriteAccounts();
   }
 
   static Future<List<TransactionHistory>> fetchTransactionHistories() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await DevConfig.simulateApiDelay();
     return getTransactionHistories();
   }
 
   // 계좌 번호로 사용자 검색 (송금 시 사용)
   static Future<String?> findUserByAccountNumber(String accountNumber) async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    await DevConfig.simulateApiDelay();
     
     // 계좌번호 정규화 (하이픈 제거)
     final normalizedAccount = accountNumber.replaceAll('-', '');
@@ -314,7 +337,7 @@ class IntegratedDummyDataService {
     required int amount,
     String? memo,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await DevConfig.simulateApiDelay();
     
     // 잔액 체크
     final currentAccount = getCurrentUserAccount();
@@ -333,7 +356,13 @@ class IntegratedDummyDataService {
 
   // 확장성을 위한 메서드들
   static Future<List<String>> getBankList() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (!DevConfig.shouldUseDummyData('bank')) {
+      DevConfig.debugLog('더미 은행 목록 비활성화 - 빈 목록 반환');
+      return [];
+    }
+    
+    await DevConfig.simulateApiDelay();
+    DevConfig.debugLog('더미 은행 목록 반환');
     return [
       '우리은행',
       '국민은행',
@@ -347,7 +376,13 @@ class IntegratedDummyDataService {
   }
 
   static Future<Map<String, dynamic>> getUserSettings() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+    if (!DevConfig.shouldUseDummyData('settings')) {
+      DevConfig.debugLog('더미 설정 비활성화 - 기본 설정 반환');
+      return {};
+    }
+    
+    await DevConfig.simulateApiDelay();
+    DevConfig.debugLog('더미 사용자 설정 반환');
     return {
       'ttsEnabled': true,
       'hapticEnabled': true,
@@ -361,7 +396,8 @@ class IntegratedDummyDataService {
   }
 
   static Future<bool> updateUserSettings(Map<String, dynamic> settings) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    await DevConfig.simulateApiDelay();
+    DevConfig.debugLog('사용자 설정 업데이트 시뮬레이션');
     // 실제로는 설정을 저장해야 함
     return true;
   }
