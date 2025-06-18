@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'routes.dart';
 import 'features/bfbank/data/services/global_tts_manager.dart';
 import 'features/bfbank/data/services/dev_config.dart';
@@ -8,6 +10,9 @@ void main() async {
   
   // 개발 환경 설정 정보 출력
   DevConfig.printDevInfo();
+  
+  // 로케일 데이터 초기화
+  await initializeDateFormatting('ko_KR', null);
   
   // 앱 시작 시 전역 TTS 매니저 초기화
   await GlobalTtsManager().initialize();
@@ -67,6 +72,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       debugShowCheckedModeBanner: false,
+      showPerformanceOverlay: false,
+      checkerboardRasterCacheImages: false,
+      checkerboardOffscreenLayers: false,
+      showSemanticsDebugger: false,
       initialRoute: AppRoutes.home,
       onGenerateRoute: AppRoutes.onGenerateRoute,
     );

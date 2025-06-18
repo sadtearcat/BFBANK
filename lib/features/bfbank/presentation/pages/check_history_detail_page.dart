@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../widgets/default_page.dart';
 import '../../data/models/transaction_history.dart';
 import '../../data/services/tts_service.dart';
@@ -33,6 +35,13 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
 
   Future<void> _initializeServices() async {
     await _ttsService.initialize();
+    // 로케일 데이터가 초기화되지 않았을 경우를 대비한 안전장치
+    try {
+      await initializeDateFormatting('ko_KR', null);
+    } catch (e) {
+      // 이미 초기화된 경우 예외가 발생할 수 있으므로 무시
+      print('Locale data already initialized or error: $e');
+    }
   }
 
   void _speakPageGuide() {
@@ -46,20 +55,34 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
 
   void _speakTransactionDetail() {
     final typeLabel = widget.transaction.typeLabel;
-    final dateFormat = DateFormat('yyyy년 MM월 dd일 HH시 mm분', 'ko_KR');
-    final formattedDate = dateFormat.format(widget.transaction.transactionDate);
     
-    final fullMessage = '''거래유형: $typeLabel
+    // React Native formatDateManually와 동일한 형식
+    String formattedDate;
+    String formattedTime;
+    
+    try {
+      final dateFormat = DateFormat('yyyy년 MM월 dd일', 'ko_KR');
+      final timeFormat = DateFormat('HH:mm:ss', 'ko_KR');
+      formattedDate = dateFormat.format(widget.transaction.transactionDate);
+      formattedTime = timeFormat.format(widget.transaction.transactionDate);
+    } catch (e) {
+      // 폴백: 로케일 오류 시 기본 포맷 사용
+      final date = widget.transaction.transactionDate;
+      formattedDate = "${date.year}년 ${date.month}월 ${date.day}일";
+      formattedTime = "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}";
+      print('Error using DateFormat: $e');
+    }
+    
+    // React Native와 동일한 TTS 메시지 형식
+    final fullMessage = '''$formattedDate
 
-거래명: ${widget.transaction.transactionName}
+$formattedTime
 
-거래금액: ${widget.transaction.formattedAmount}
+${widget.transaction.transactionName}
 
-잔액: ${widget.transaction.formattedBalance}
+${widget.transaction.formattedAmount}
 
-계좌번호: ${widget.transaction.transactionAccount}
-
-거래일시: $formattedDate''';
+${typeLabel}되었습니다.''';
     
     _ttsService.speak(fullMessage);
   }
@@ -77,11 +100,17 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: DefaultPage(
-          upperLeftWidget: _buildButtonContent(Icons.arrow_back, '이전'),
-          upperRightWidget: _buildButtonContent(Icons.home, '메인'),
-          lowerLeftWidget: _buildButtonContent(Icons.cancel, '취소'),
-          lowerRightWidget: _buildButtonContent(Icons.check, '확인'),
-          mainWidget: _buildTransactionDetailContent(),
+          upperLeftWidget: _buildButtonContent('assets/icons/ArrowLeft.svg', '이전'),
+          upperRightWidget: _buildButtonContent('assets/icons/Home.svg', '메인'),
+          lowerLeftWidget: _buildButtonContent('assets/icons/Cancel.svg', '취소'),
+          lowerRightWidget: _buildButtonContent('assets/icons/Check.svg', '확인'),
+          mainWidget: GestureDetector(
+            onTap: () {
+              _hapticService.vibrateCustomSequence('tick');
+              _speakTransactionDetail();
+            },
+            child: _buildTransactionDetailContent(),
+          ),
           onUpperLeftPress: () => _handleBack(context),
           onUpperRightPress: () => _handleHome(context),
           onLowerLeftPress: () => _handleBack(context),
@@ -96,11 +125,16 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
     );
   }
 
-  Widget _buildButtonContent(IconData icon, String text) {
+  Widget _buildButtonContent(String assetPath, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 60, color: Colors.white),
+        SvgPicture.asset(
+          assetPath,
+          width: 60,
+          height: 60,
+          color: Colors.white,
+        ),
         const SizedBox(height: 10),
         Text(
           text,
@@ -115,57 +149,56 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
   }
 
   Widget _buildTransactionDetailContent() {
-    final dateFormat = DateFormat('yyyy년 MM월 dd일', 'ko_KR');
-    final timeFormat = DateFormat('HH시 mm분', 'ko_KR');
-    final formattedDate = dateFormat.format(widget.transaction.transactionDate);
-    final formattedTime = timeFormat.format(widget.transaction.transactionDate);
+    // 안전한 DateFormat 사용 - React Native formatDateManually와 동일한 형식
+    String formattedDate;
+    String formattedTime;
+    
+    try {
+      final dateFormat = DateFormat('yyyy년 MM월 dd일', 'ko_KR');
+      final timeFormat = DateFormat('HH:mm:ss', 'ko_KR');
+      formattedDate = dateFormat.format(widget.transaction.transactionDate);
+      formattedTime = timeFormat.format(widget.transaction.transactionDate);
+    } catch (e) {
+      // 폴백: 로케일 오류 시 기본 포맷 사용
+      final date = widget.transaction.transactionDate;
+      formattedDate = "${date.year}년 ${date.month}월 ${date.day}일";
+      formattedTime = "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}:${date.second.toString().padLeft(2, '0')}";
+      print('Error using DateFormat: $e');
+    }
     
     final isWithdrawal = widget.transaction.transactionType == 'WITHDRAWAL';
     final typeLabel = widget.transaction.typeLabel;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 음성 안내 버튼
-          GestureDetector(
-            onTap: () {
-              _hapticService.vibrateCustomSequence('tick');
-              _speakTransactionDetail();
-            },
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 32),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.volume_up,
+          // 음성 안내 버튼 (React Native와 동일한 스타일)
+          Container(
+            margin: const EdgeInsets.only(bottom: 32),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset('assets/icons/Volume.svg', width: 30, height: 30, color: Colors.white),
+                const SizedBox(width: 12),
+                const Text(
+                  '계좌 상세 조회',
+                  style: TextStyle(
                     color: Colors.white,
-                    size: 30,
+                    fontSize: 25,
                   ),
-                  const SizedBox(width: 20),
-                  const Text(
-                    '계좌 상세 조회',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 25,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-
-          // 날짜와 시간
+          
+          // 날짜와 시간 (React Native와 동일한 레이아웃)
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 formattedDate,
@@ -189,7 +222,7 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
 
           const SizedBox(height: 8),
 
-          // 거래 이름
+          // 거래 이름 (React Native와 동일한 스타일)
           Text(
             widget.transaction.transactionName,
             style: const TextStyle(
@@ -197,15 +230,15 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
+            textAlign: TextAlign.left,
           ),
 
           const SizedBox(height: 26),
 
-          // 거래 유형과 금액
+          // 거래 타입과 금액 (React Native bankContainer와 동일한 레이아웃)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // 거래 유형 태그
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
@@ -221,70 +254,18 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
                   ),
                 ),
               ),
-              
-              // 거래 금액
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Text(
                   widget.transaction.formattedAmount,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    color: isWithdrawal ? const Color(0xFFDC3545) : const Color(0xFF34C759),
+                    color: Colors.white,
                   ),
                 ),
               ),
             ],
-          ),
-
-          const SizedBox(height: 40),
-
-          // 추가 정보 (잔액, 계좌번호)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF333333),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '거래 후 잔액',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFFCCCCCC),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.transaction.formattedBalance,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  '상대방 계좌번호',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFFCCCCCC),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  widget.transaction.transactionAccount,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -300,6 +281,7 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
   void _handleHome(BuildContext context) {
     _hapticService.vibrateCustomSequence('double_tick');
     _ttsService.speak('메인 화면으로 이동합니다.');
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/bfbank-main', (route) => false);
   }
 } 
+

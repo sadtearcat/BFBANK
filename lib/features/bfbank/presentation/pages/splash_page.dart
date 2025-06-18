@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/services/haptic_service.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/settings_storage_service.dart';
@@ -38,12 +39,49 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // BF Logo
-            Image.asset(
-              'assets/BFLogo.png',
+            // BF Logo - SVG 사용
+            Builder(
+              builder: (context) {
+                try {
+                  return SvgPicture.asset(
+                    'assets/icons/BarrierFree.svg',
+                    width: 200,
+                    height: 200,
+                    // Flutter 3.10 이상에서는 colorFilter 사용
+                    colorFilter: const ColorFilter.mode(
+                      Colors.white,
+                      BlendMode.srcIn,
+                    ),
+                    placeholderBuilder: (BuildContext context) => const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  // SVG 로딩 실패 시 대체 UI 표시
+                  print('SVG 로딩 실패: $e');
+                  return Container(
               width: 200,
               height: 200,
-              fit: BoxFit.contain,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      border: Border.all(color: Colors.white, width: 2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'BF',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 80,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
             
             const SizedBox(height: 40),

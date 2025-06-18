@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'dart:async';
 import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
@@ -45,12 +46,8 @@ class _PaymentPageState extends State<PaymentPage> {
   void _speakPageGuide() {
     _hapticService.vibrateCustomSequence('notification');
     const guide = '''
-    결제 화면입니다.
-    QR 코드가 생성되었습니다.
-    상대방이 QR 코드를 스캔하여 결제할 수 있습니다.
-    QR 코드는 10분간 유효하며, 자동으로 새로 갱신됩니다.
-    왼쪽 위에는 이전 버튼이, 오른쪽 위에는 홈 버튼이 있습니다.
-    왼쪽 아래에는 QR 새로고침 버튼이, 오른쪽 아래에는 음성 안내 버튼이 있습니다.
+    결제 페이지입니다.
+    QR를 스캔하여 송금할 계좌와 금액을 입력해주세요.
     ''';
     _ttsService.speak(guide);
   }
@@ -122,30 +119,35 @@ class _PaymentPageState extends State<PaymentPage> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: DefaultPage(
-          upperLeftWidget: _buildButtonContent(Icons.arrow_back, '이전'),
-          upperRightWidget: _buildButtonContent(Icons.home, '메인'),
-          lowerLeftWidget: _buildButtonContent(Icons.refresh, '새로고침'),
-          lowerRightWidget: _buildButtonContent(Icons.volume_up, '음성안내'),
-          mainWidget: _buildPaymentContent(),
+          upperLeftWidget: _buildButtonContent('assets/icons/ArrowLeft.svg', '이전'),
+          upperRightWidget: _buildButtonContent('assets/icons/Home.svg', '메인'),
+          lowerLeftWidget: _buildButtonContent('assets/icons/Cancel.svg', '취소'),
+          lowerRightWidget: _buildButtonContent('assets/icons/Check.svg', '확인'),
+          mainWidget: _buildMainContent(),
           onUpperLeftPress: () => _handleBack(context),
           onUpperRightPress: () => _handleHome(context),
-          onLowerLeftPress: _handleRefreshQR,
-          onLowerRightPress: _handleVoiceGuide,
+          onLowerLeftPress: null,
+          onLowerRightPress: null,
           // React Native와 동일한 더블탭 TTS 메시지
           upperLeftTTS: '이전',
           upperRightTTS: '메인',
-          lowerLeftTTS: '새로고침',
-          lowerRightTTS: '음성안내',
+          lowerLeftTTS: '취소',
+          lowerRightTTS: '확인',
         ),
       ),
     );
   }
 
-  Widget _buildButtonContent(IconData icon, String text) {
+  Widget _buildButtonContent(String assetPath, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 48, color: Colors.white),
+        SvgPicture.asset(
+          assetPath,
+          width: 48,
+          height: 48,
+          color: Colors.white,
+        ),
         const SizedBox(height: 8),
         Text(
           text,
@@ -159,128 +161,66 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  Widget _buildPaymentContent() {
-    final user = IntegratedDummyDataService.getCurrentUser();
-    final account = IntegratedDummyDataService.getCurrentUserAccount();
-    
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: const Color(0xFF333333),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    '${user.username} 님',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    account.formattedAccountNo,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    account.formattedBalance,
-                    style: const TextStyle(
-                      color: Colors.greenAccent,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+  Widget _buildMainContent() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Voice Button (React Native와 동일)
+        GestureDetector(
+          onTap: () {
+            _hapticService.vibrateCustomSequence('tick');
+            _speakPageGuide();
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 20),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(12),
             ),
-
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    '남은 시간: $_remainingTime',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SvgPicture.asset('assets/icons/Volume.svg', width: 30, height: 30, color: Colors.white),
+                const SizedBox(width: 20),
+                const Text(
+                  '결제 하기',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
                   ),
-                  const SizedBox(height: 15),
-                  
-                  _isGenerating
-                      ? const Column(
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 10),
-                            Text('QR 생성 중...', style: TextStyle(color: Colors.black)),
-                          ],
-                        )
-                      : Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.qr_code, size: 80, color: Colors.white),
-                              SizedBox(height: 8),
-                              Text(
-                                'QR 코드',
-                                style: TextStyle(color: Colors.white, fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                  
-                  const SizedBox(height: 15),
-                  const Text(
-                    '상대방이 QR 코드를 스캔하여\n결제할 수 있습니다.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            
-            const SizedBox(height: 15),
-            
-            const Text(
-              'QR 코드는 10분간 유효합니다.\n자동으로 새로 갱신됩니다.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
-      ),
+        
+        // QR Container (React Native PaymentMainScreen과 동일)
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            children: [
+              Text(
+                '남은 시간: $_remainingTime',
+                style: const TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              _isGenerating
+                  ? const Text('QR 생성 중...', style: TextStyle(color: Colors.black))
+                  : SvgPicture.asset('assets/icons/QR.svg', width: 200, height: 200, color: Colors.black),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -293,17 +233,6 @@ class _PaymentPageState extends State<PaymentPage> {
   void _handleHome(BuildContext context) {
     _hapticService.vibrateCustomSequence('double_tick');
     _ttsService.speak('메인 화면으로 이동합니다.');
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-  }
-
-  void _handleRefreshQR() {
-    _hapticService.vibrateCustomSequence('notification');
-    _ttsService.speak('QR 코드를 새로 생성합니다.');
-    _createNewQR();
-  }
-
-  void _handleVoiceGuide() {
-    _hapticService.vibrateCustomSequence('tick');
-    _speakPageGuide();
+    Navigator.of(context).pushNamedAndRemoveUntil('/bfbank-main', (route) => false);
   }
 } 

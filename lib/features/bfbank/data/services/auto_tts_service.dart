@@ -5,6 +5,10 @@ class AutoTTSService {
   static final AutoTTSService _instance = AutoTTSService._internal();
   factory AutoTTSService() => _instance;
   static AutoTTSService get instance => _instance;
+  
+  // TtsService 인스턴스 생성
+  final TtsService _ttsService = TtsService();
+  
   AutoTTSService._internal();
 
   /// React Native의 useTTSOnFocus와 동일한 기능
@@ -12,13 +16,13 @@ class AutoTTSService {
   void speakOnPageEnter(String message) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 500), () {
-        TtsService.instance.speak(message);
+        _ttsService.speak(message);
       });
     });
   }
 
   /// 페이지 종료 시 TTS 중단
   void stopOnPageExit() {
-    TtsService.instance.stop();
+    _ttsService.stop();
   }
 } 

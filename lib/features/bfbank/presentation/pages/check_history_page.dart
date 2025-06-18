@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/haptic_service.dart';
@@ -28,43 +30,33 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _initializeServices();
-    _loadTransactionHistories();
+    _loadTransactionHistoriesSync();
+    _initializeServicesAsync();
     
-    // 페이지 진입 시 TTS 안내
+    // 페이지 진입 시 TTS 안내 (지연)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _speakPageGuide();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _speakPageGuide();
+      });
     });
   }
 
-  Future<void> _initializeServices() async {
-    await _ttsService.initialize();
+  void _loadTransactionHistoriesSync() {
+    // 동기적으로 더미 데이터 즉시 로드
+    setState(() {
+      _histories = IntegratedDummyDataService.getTransactionHistories();
+      _hasAccount = DevConfig.enableAutoAccountAssignment;
+      _isLoading = false;
+    });
   }
 
-  Future<void> _loadTransactionHistories() async {
-    setState(() => _isLoading = true);
-    
+  Future<void> _initializeServicesAsync() async {
+    // 비동기로 서비스 초기화 (UI 블로킹 방지)
     try {
-      // 개발 단계: 더미 계좌와 거래 내역을 자동으로 부여
-      final histories = await IntegratedDummyDataService.fetchTransactionHistories();
-      setState(() {
-        _histories = histories;
-        _hasAccount = DevConfig.enableAutoAccountAssignment; // DevConfig로 제어
-      });
-      
-      // 첫 번째 내역 자동 읽기
-      if (_histories.isNotEmpty) {
-        _speakTransactionDetail(_histories[0]);
-      }
-    } catch (error) {
-      print('Error loading histories: $error');
-      // 에러가 발생해도 더미 데이터로 처리
-      setState(() {
-        _histories = IntegratedDummyDataService.getTransactionHistories();
-        _hasAccount = DevConfig.enableAutoAccountAssignment;
-      });
-    } finally {
-      setState(() => _isLoading = false);
+      await _ttsService.initialize();
+      await initializeDateFormatting('ko_KR', null);
+    } catch (e) {
+      print('Service initialization error: $e');
     }
   }
 
@@ -80,8 +72,17 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
   }
 
   void _speakTransactionDetail(TransactionHistory transaction) {
+    // 안전한 DateFormat 사용
+    String formattedDate;
+    try {
     final dateFormat = DateFormat('yyyy년 MM월 dd일 HH시 mm분', 'ko_KR');
-    final formattedDate = dateFormat.format(transaction.transactionDate);
+      formattedDate = dateFormat.format(transaction.transactionDate);
+    } catch (e) {
+      // 폴백: 로케일 오류 시 기본 포맷 사용
+      final date = transaction.transactionDate;
+      formattedDate = "${date.year}년 ${date.month}월 ${date.day}일 ${date.hour}시 ${date.minute}분";
+      print('Error using DateFormat: $e');
+    }
     
     final message = '''
     $formattedDate
@@ -123,10 +124,10 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: DefaultPage(
-          upperLeftWidget: _buildButtonContent(Icons.arrow_back, '이전'),
-          upperRightWidget: _buildButtonContent(Icons.home, '메인'),
-          lowerLeftWidget: _buildButtonContent(Icons.keyboard_arrow_left, '이전'),
-          lowerRightWidget: _buildButtonContent(Icons.keyboard_arrow_right, '다음'),
+          upperLeftWidget: _buildButtonContent('assets/icons/ArrowLeft.svg', '이전'),
+          upperRightWidget: _buildButtonContent('assets/icons/Home.svg', '메인'),
+          lowerLeftWidget: _buildButtonContent('assets/icons/Prev.svg', '이전'),
+          lowerRightWidget: _buildButtonContent('assets/icons/Next.svg', '다음'),
           mainWidget: _buildCarouselContent(),
           onUpperLeftPress: () => _handleBack(context),
           onUpperRightPress: () => _handleHome(context),
@@ -147,25 +148,16 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: DefaultPage(
-          upperLeftWidget: _buildButtonContent(Icons.arrow_back, '이전'),
-          upperRightWidget: _buildButtonContent(Icons.home, '메인'),
+          upperLeftWidget: _buildButtonContent('assets/icons/ArrowLeft.svg', '이전'),
+          upperRightWidget: _buildButtonContent('assets/icons/Home.svg', '메인'),
           mainWidget: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 80,
-                color: Colors.white70,
-              ),
-              const SizedBox(height: 20),
+              SvgPicture.asset('assets/icons/History2.svg', width: 100, height: 100, color: Colors.white),
+              const SizedBox(height: 30),
               const Text(
-                '등록된 계좌가 없습니다.\n계좌를 먼저 생성해주세요.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
+                '거래 내역이 없습니다',
+                style: TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -176,11 +168,16 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
     );
   }
 
-  Widget _buildButtonContent(IconData icon, String text) {
+  Widget _buildButtonContent(String assetPath, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, size: 60, color: Colors.white),
+        SvgPicture.asset(
+          assetPath,
+          width: 60,
+          height: 60,
+          color: Colors.white,
+        ),
         const SizedBox(height: 10),
         Text(
           text,
@@ -196,7 +193,7 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
 
   Widget _buildCarouselContent() {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         // 음성 안내 버튼
         GestureDetector(
@@ -207,8 +204,8 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
             }
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
             decoration: BoxDecoration(
               color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(12),
@@ -216,12 +213,9 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.volume_up, color: Colors.white, size: 25),
+                SvgPicture.asset('assets/icons/Volume.svg', width: 22, height: 22, color: Colors.white),
                 const SizedBox(width: 12),
-                const Text(
-                  '거래 내역 듣기',
-                  style: TextStyle(color: Colors.white, fontSize: 20),
-                ),
+                const Text('거래 내역 듣기', style: TextStyle(color: Colors.white, fontSize: 20)),
               ],
             ),
           ),
@@ -230,39 +224,41 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
         // 현재 인덱스 표시
         Text(
           '${_currentIndex + 1} / ${_histories.length}',
-          style: const TextStyle(color: Colors.grey, fontSize: 18),
+          style: const TextStyle(color: Colors.grey, fontSize: 16),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         
-        // 캐러셀
-        CarouselSlider(
-          carouselController: _carouselController,
-          options: CarouselOptions(
-            height: 300,
-            enableInfiniteScroll: false,
-            enlargeCenterPage: true,
-            viewportFraction: 0.8,
-            onPageChanged: (index, reason) {
-              setState(() => _currentIndex = index);
-              _hapticService.vibrateCustomSequence('tick');
-              _speakTransactionDetail(_histories[index]);
-            },
-          ),
-          items: _histories.map((transaction) {
-            return Builder(
-              builder: (BuildContext context) {
-                return _buildTransactionCard(transaction);
+        // 캐러셀 - 남은 공간을 모두 사용
+        Expanded(
+          child: CarouselSlider(
+            carouselController: _carouselController,
+            options: CarouselOptions(
+              height: double.infinity,
+              enableInfiniteScroll: false,
+              enlargeCenterPage: true,
+              viewportFraction: 0.85,
+              onPageChanged: (index, reason) {
+                setState(() => _currentIndex = index);
+                _hapticService.vibrateCustomSequence('tick');
+                _speakTransactionDetail(_histories[index]);
               },
-            );
-          }).toList(),
+            ),
+            items: _histories.map((transaction) {
+              return Builder(
+                builder: (BuildContext context) {
+                  return _buildTransactionCard(transaction);
+                },
+              );
+            }).toList(),
+          ),
         ),
         
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         
         // 선택 안내
         const Text(
           '화면을 터치하여 상세 정보를 확인하세요',
-          style: TextStyle(color: Colors.grey, fontSize: 16),
+          style: TextStyle(color: Colors.grey, fontSize: 14),
           textAlign: TextAlign.center,
         ),
       ],
@@ -270,11 +266,24 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
   }
 
   Widget _buildTransactionCard(TransactionHistory transaction) {
+    // 안전한 DateFormat 사용
+    String formattedDate;
+    try {
     final dateFormat = DateFormat('MM월 dd일 HH:mm');
-    final formattedDate = dateFormat.format(transaction.transactionDate);
+      formattedDate = dateFormat.format(transaction.transactionDate);
+    } catch (e) {
+      // 폴백: 로케일 오류 시 기본 포맷 사용
+      final date = transaction.transactionDate;
+      formattedDate = "${date.month}월 ${date.day}일 ${date.hour}:${date.minute}";
+      print('Error using DateFormat: $e');
+    }
     
     return GestureDetector(
-      onTap: () => _handleSelectTransaction(transaction),
+      onTap: () {
+        _hapticService.vibrateCustomSequence('tick');
+        _speakTransactionDetail(transaction);
+      },
+      onDoubleTap: () => _handleSelectTransaction(transaction),
       child: Container(
         width: MediaQuery.of(context).size.width,
         margin: const EdgeInsets.symmetric(horizontal: 5.0),
@@ -291,43 +300,12 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // 거래 타입 아이콘
-              Icon(
-                transaction.isWithdrawal 
-                    ? Icons.arrow_upward 
-                    : Icons.arrow_downward,
-                color: transaction.isWithdrawal ? Colors.red : Colors.green,
-                size: 40,
-              ),
-              const SizedBox(height: 15),
-              
-              // 거래 상대방
-              Text(
-                transaction.transactionName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              // 거래 금액
-              Text(
-                transaction.formattedAmount,
-                style: TextStyle(
-                  color: transaction.isWithdrawal ? Colors.red : Colors.green,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              
-              // 거래 날짜
+              // 거래 날짜 (상단)
               Text(
                 formattedDate,
                 style: const TextStyle(
@@ -335,16 +313,54 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: 8),
               
-              // 거래 타입
+              // 거래 상대방 (메인)
               Text(
-                transaction.typeLabel,
-                style: TextStyle(
-                  color: transaction.isWithdrawal ? Colors.red : Colors.green,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+                transaction.transactionName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              
+              // 거래 타입과 금액 (하단 - 한 줄로)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: transaction.isWithdrawal ? Colors.red : Colors.green,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      transaction.typeLabel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      transaction.formattedAmount,
+                      style: TextStyle(
+                        color: transaction.isWithdrawal ? Colors.red : Colors.green,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.right,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -362,7 +378,7 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
   void _handleHome(BuildContext context) {
     _hapticService.vibrateCustomSequence('double_tick');
     _ttsService.speak('메인 화면으로 이동합니다.');
-    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    Navigator.of(context).pushNamedAndRemoveUntil('/bfbank-main', (route) => false);
   }
 
   void _handlePreviousTransaction() {

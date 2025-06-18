@@ -180,13 +180,16 @@ class _GalleryPageState extends State<GalleryPage> {
     final detectedObject = _galleryService.detectedObjects[index];
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => _FullScreenObjectPage(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => _FullScreenObjectPage(
           detectedObject: detectedObject,
           heroTag: 'detected_object_$index',
           objectIndex: index + 1,
           totalObjects: _galleryService.detectedObjects.length,
         ),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
       ),
     );
   }

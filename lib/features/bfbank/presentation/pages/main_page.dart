@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/haptic_service.dart';
@@ -69,19 +70,19 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
       body: SafeArea(
         child: DefaultPage(
           upperLeftWidget: _buildButtonContent(
-            Icons.qr_code,
+            'assets/icons/QR.svg',
             '결제',
           ),
           upperRightWidget: _buildButtonContent(
-            Icons.settings,
+            'assets/icons/Settings2.svg',
             '설정',
           ),
           lowerLeftWidget: _buildButtonContent(
-            Icons.history,
+            'assets/icons/History2.svg',
             '조회',
           ),
           lowerRightWidget: _buildButtonContent(
-            Icons.send,
+            'assets/icons/Send2.svg',
             '송금',
           ),
           mainWidget: _buildMainContent(),
@@ -99,14 +100,15 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
     );
   }
 
-  Widget _buildButtonContent(IconData icon, String text) {
+  Widget _buildButtonContent(String asset, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 48, // 아이콘 크기 줄임
+        SvgPicture.asset(
+          asset,
+          width: 48, // 아이콘 크기 줄임
+          height: 48,
           color: Colors.white,
         ),
         const SizedBox(height: 6), // 간격 줄임

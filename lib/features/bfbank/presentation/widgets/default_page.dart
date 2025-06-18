@@ -79,9 +79,9 @@ class DefaultPage extends StatelessWidget {
           ),
           // 메인 영역
           Expanded(
-            flex: 3,
+            flex: 2,
             child: Padding(
-              padding: const EdgeInsets.all(10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
@@ -89,7 +89,8 @@ class DefaultPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.black, width: 2),
                 ),
-                child: Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
                   child: mainWidget ?? Container(),
                 ),
               ),

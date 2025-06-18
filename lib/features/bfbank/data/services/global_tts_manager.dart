@@ -33,7 +33,7 @@ class GlobalTtsManager {
   bool _isProcessingQueue = false;
   
   // 설정 옵션
-  bool _enableQueue = true; // 큐 모드 vs 즉시 재생 모드
+  bool _enableQueue = false; // 큐 모드 vs 즉시 재생 모드 - 기본값을 false로 변경
   int _maxQueueSize = 10; // 최대 큐 크기
   bool _isEnabled = true; // TTS 활성화/비활성화
 

@@ -22,43 +22,53 @@ class AppRoutes {
   static const String aiTest = '/ai-test';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    // 애니메이션 없는 페이지 전환을 위한 공통 함수
+    PageRouteBuilder<T> _buildPageWithoutAnimation<T extends Object?>(Widget page) {
+      return PageRouteBuilder<T>(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
+      );
+    }
+
     switch (settings.name) {
       case home:
-        return MaterialPageRoute(builder: (context) => const SplashPage());
+        return _buildPageWithoutAnimation(const SplashPage());
       case camera:
-        return MaterialPageRoute(builder: (context) => const CameraDetectionPage());
+        return _buildPageWithoutAnimation(const CameraDetectionPage());
       case bfbankMain:
-        return MaterialPageRoute(builder: (context) => const BFBankMainPage());
+        return _buildPageWithoutAnimation(const BFBankMainPage());
       case sendMain:
-        return MaterialPageRoute(builder: (context) => const SendMainPage());
+        return _buildPageWithoutAnimation(const SendMainPage());
       case checkHistory:
-        return MaterialPageRoute(builder: (context) => const CheckHistoryPage());
+        return _buildPageWithoutAnimation(const CheckHistoryPage());
       case checkHistoryDetail:
         // CheckHistoryDetail은 arguments를 통해 transaction을 받아야 함
         final args = settings.arguments as Map<String, dynamic>?;
         if (args != null && args['transaction'] != null) {
-          return MaterialPageRoute(
-            builder: (context) => CheckHistoryDetailPage(
+          return _buildPageWithoutAnimation(
+            CheckHistoryDetailPage(
               transaction: args['transaction'],
             ),
           );
         }
-        return MaterialPageRoute(
-          builder: (context) => Scaffold(
+        return _buildPageWithoutAnimation(
+          Scaffold(
             body: Center(
               child: Text('거래 내역 정보가 없습니다.'),
             ),
           ),
         );
       case payment:
-        return MaterialPageRoute(builder: (context) => const PaymentPage());
+        return _buildPageWithoutAnimation(const PaymentPage());
       case AppRoutes.settings:
-        return MaterialPageRoute(builder: (context) => const SettingsPage());
+        return _buildPageWithoutAnimation(const SettingsPage());
       case aiTest:
-        return MaterialPageRoute(builder: (context) => const HomePage());
+        return _buildPageWithoutAnimation(const HomePage());
       default:
-        return MaterialPageRoute(
-          builder: (context) => Scaffold(
+        return _buildPageWithoutAnimation(
+          Scaffold(
             body: Center(
               child: Text('페이지를 찾을 수 없습니다: ${settings.name}'),
             ),

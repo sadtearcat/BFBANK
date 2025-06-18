@@ -66,8 +66,11 @@ class HomePage extends StatelessWidget {
   void _navigateToCamera(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const CameraDetectionPage(),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const CameraDetectionPage(),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
       ),
     );
   }
@@ -76,10 +79,13 @@ class HomePage extends StatelessWidget {
     final galleryService = GalleryService();
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => GalleryPage(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => GalleryPage(
           croppedImages: galleryService.croppedImages, // 기존 호환성 유지
         ),
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) => child,
       ),
     );
   }
