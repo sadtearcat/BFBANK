@@ -431,27 +431,21 @@ class DrawingModalWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!visible) return const SizedBox.shrink();
 
-    // React Native: 전체 화면을 덮는 투명 오버레이
+    // ❌ [주석 오류 수정] HandwritingOverlay는 삭제됨
+    // ✅ [올바른 구현] HandwritingInputModal 사용
     return Container(
-      color: Colors.transparent,
-      child: HandwritingOverlay(
-        onResult: (result) {
+      color: Colors.black.withOpacity(0.8),
+      child: HandwritingInputModal(
+        onDigitRecognized: (digit) {
           // React Native와 동일한 형식으로 변환
-          if (result == 'delete') {
+          if (digit == '✗') {
             onPredict('11'); // React Native: digit === '11' (delete)
-          } else if (result == 'complete') {
+          } else if (digit == '✓') {
             onPredict('10'); // React Native: digit === '10' (complete)
           } else {
-            onPredict(result); // 숫자 0-9
+            onPredict(digit); // 숫자 0-9
           }
         },
-        onComplete: () {
-          // V 제스처 완료 - 이미 onResult에서 처리됨
-        },
-        onClose: () {
-          // 모달 닫기 (React Native에서는 visible=false로 제어)
-        },
-        enableDebugLogs: true, // 디버깅을 위해 활성화
       ),
     );
   }

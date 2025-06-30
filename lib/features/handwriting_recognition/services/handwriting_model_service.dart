@@ -271,8 +271,9 @@ class HandwritingModelService {
       );
       */
       
-      // ✅ [TEMPORARY] 원본 YOLO 플러그인 기본 사용법
-      _predictor = YOLO.fromAssets(
+      // ❌ [주석 오류 수정] YOLO.fromAssets, YOLO.fromPath 모두 존재하지 않음
+      // ✅ [올바른 구현] 원본 YOLO 플러그인 실제 API 사용법
+      _predictor = YOLO(
         modelPath: MODEL_NAME,
         task: YOLOTask.classify,
       );
