@@ -138,20 +138,22 @@ class HandwritingPreprocessor {
   /// 모든 개선사항을 포함한 메인 전처리 함수
   static Future<Float32List?> preprocessStrokesToTensor(
     List<DrawingStroke> strokes, {
-    bool enableAdvancedProcessing = true,
+    bool enableAdvancedProcessing = false, // ✅ 임시: 기본 처리로 변경 (좌표 변환 문제 해결)
     bool enableTemperatureEnsemble = false,
   }) async {
     if (strokes.isEmpty) return null;
 
-    print('🔄 ${strokes.length}개 스트로크로 향상된 전처리 시작');
+    print('🔄 ${strokes.length}개 스트로크로 전처리 시작');
 
     if (enableAdvancedProcessing) {
+      print('🎯 고급 전처리 모드: 무게중심 + 기울기 보정');
       if (enableTemperatureEnsemble) {
         return _processWithEnsemble(strokes);
       } else {
         return _processWithEnhancements(strokes);
       }
     } else {
+      print('🎯 기본 전처리 모드: 경계상자 기반 스케일링 (좌표 변환 문제 해결됨)');
       return _processBasic(strokes);
     }
   }
@@ -367,6 +369,21 @@ class HandwritingPreprocessor {
     final bounds = _getCombinedBounds(strokes);
     if (bounds.width == 0 || bounds.height == 0) return null;
 
+    // 🔍 [DEBUG] 경계상자 및 스케일링 계산 상세 분석
+    print('🔍 === 기본 전처리 상세 분석 ===');
+    print('전체 경계상자: (${bounds.left.toStringAsFixed(1)}, ${bounds.top.toStringAsFixed(1)}) ~ (${bounds.right.toStringAsFixed(1)}, ${bounds.bottom.toStringAsFixed(1)})');
+    print('경계상자 크기: ${bounds.width.toStringAsFixed(1)} x ${bounds.height.toStringAsFixed(1)}');
+    
+    final maxDim = max(bounds.width, bounds.height);
+    final scale = (inputSize - 4) / maxDim; // 각 면에 2px 패딩
+    final offsetX = (inputSize - bounds.width * scale) / 2 - bounds.left * scale;
+    final offsetY = (inputSize - bounds.height * scale) / 2 - bounds.top * scale;
+    
+    print('최대 치수: ${maxDim.toStringAsFixed(1)}');
+    print('스케일: ${scale.toStringAsFixed(4)}');
+    print('오프셋: (${offsetX.toStringAsFixed(1)}, ${offsetY.toStringAsFixed(1)})');
+    print('변환 후 크기: ${(bounds.width * scale).toStringAsFixed(1)} x ${(bounds.height * scale).toStringAsFixed(1)}');
+
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);
 
@@ -374,12 +391,6 @@ class HandwritingPreprocessor {
       Rect.fromLTWH(0, 0, inputSize.toDouble(), inputSize.toDouble()),
       Paint()..color = Colors.white,
     );
-
-    // 맞춤을 위한 간단한 크기 조정
-    final maxDim = max(bounds.width, bounds.height);
-    final scale = (inputSize - 4) / maxDim; // 각 면에 2px 패딩
-    final offsetX = (inputSize - bounds.width * scale) / 2 - bounds.left * scale;
-    final offsetY = (inputSize - bounds.height * scale) / 2 - bounds.top * scale;
 
     final paint = Paint()
       ..color = Colors.black
@@ -416,16 +427,28 @@ class HandwritingPreprocessor {
   static Float32List _convertToGrayscaleTensor(Uint8List pixels) {
     final grayscale = Float32List(inputSize * inputSize);
     
+    print('🔍 === 색상 변환 분석 ===');
+    
     // 첫 번째 패스: 휘도 공식을 사용하여 그레이스케일로 변환
     for (int i = 0; i < inputSize * inputSize; i++) {
       final r = pixels[i * 4];
       final g = pixels[i * 4 + 1];
       final b = pixels[i * 4 + 2];
       
+      // 🔍 [DEBUG] 첫 몇 픽셀의 색상 값 확인
+      if (i < 5) {
+        print('픽셀 $i: RGB($r, $g, $b)');
+      }
+      
       // 흰색 배경을 0으로, 검은색 잉크를 1로 변환
       // 휘도 공식 사용: 0.299*R + 0.587*G + 0.114*B
       final luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
       grayscale[i] = 1.0 - luminance; // 반전: 흰색=0, 검은색=1
+      
+      // 🔍 [DEBUG] 변환 결과 확인
+      if (i < 5) {
+        print('  휘도: ${luminance.toStringAsFixed(3)} → 최종: ${grayscale[i].toStringAsFixed(3)}');
+      }
     }
 
     // 정규화를 위한 최대값 찾기

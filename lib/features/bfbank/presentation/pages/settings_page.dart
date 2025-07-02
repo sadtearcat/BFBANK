@@ -60,6 +60,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _initializeSettingItems() {
     _settingItems = [
+      // 개발자 도구 (개발용으로 첫 번째 위치)
+      SettingItem(
+        type: SettingType.action,
+        title: '개발자 옵션',
+        description: '개발자를 위한 테스트 도구와 디버깅 기능을 제공합니다. 손글씨 인식 벤치마크, TTS 테스트, 햅틱 테스트 등이 포함되어 있습니다',
+        category: '개발자 도구',
+        onAction: () {
+          _hapticService.vibrateCustomSequence('tick');
+          _ttsService.speak('개발자 옵션 페이지로 이동합니다.');
+          Navigator.pushNamed(context, '/developer-options');
+        },
+      ),
+      
       // 사용자 정보
       SettingItem(
         type: SettingType.info,
@@ -193,19 +206,6 @@ class _SettingsPageState extends State<SettingsPage> {
           setState(() => _autoLogin = value);
           _ttsService.speak(value ? '자동 로그인이 활성화되었습니다' : '자동 로그인이 비활성화되었습니다');
           _saveSettingsInBackground();
-        },
-      ),
-      
-      // 개발자 도구
-      SettingItem(
-        type: SettingType.action,
-        title: '개발자 옵션',
-        description: '개발자를 위한 테스트 도구와 디버깅 기능을 제공합니다. 손글씨 인식 벤치마크, TTS 테스트, 햅틱 테스트 등이 포함되어 있습니다',
-        category: '개발자 도구',
-        onAction: () {
-          _hapticService.vibrateCustomSequence('tick');
-          _ttsService.speak('개발자 옵션 페이지로 이동합니다.');
-          Navigator.pushNamed(context, '/developer-options');
         },
       ),
     ];

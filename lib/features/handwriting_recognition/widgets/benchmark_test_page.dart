@@ -18,7 +18,7 @@ class BenchmarkTestPage extends StatefulWidget {
 class _BenchmarkTestPageState extends State<BenchmarkTestPage> {
   String _currentInput = '';
   bool _showOverlay = false;
-  bool _enableAdvancedProcessing = true;
+  bool _enableAdvancedProcessing = false;  // ✅ 기본값 변경 (좌표 변환 문제 해결)
   bool _enableTemperatureEnsemble = false;
   bool _enableBenchmark = false;
   bool _enableDebugLogs = false;
@@ -229,10 +229,10 @@ class _BenchmarkTestPageState extends State<BenchmarkTestPage> {
                       padding: const EdgeInsets.all(16),
                       child: IconButton(
                         onPressed: () {
-                          setState(() {
-                            _showOverlay = false;
-                          });
-                        },
+                setState(() {
+                  _showOverlay = false;
+                });
+              },
                         icon: const Icon(Icons.close, color: Colors.white, size: 32),
                       ),
                     ),
@@ -255,9 +255,9 @@ class _BenchmarkTestPageState extends State<BenchmarkTestPage> {
                               }
                             });
                           } else if (prediction.digit == 'complete') {
-                            setState(() {
-                              _showOverlay = false;
-                            });
+                setState(() {
+                  _showOverlay = false;
+                });
                           } else if (prediction.shouldAccept && RegExp(r'^[0-9]$').hasMatch(prediction.digit)) {
                             setState(() {
                               _currentInput += prediction.digit;

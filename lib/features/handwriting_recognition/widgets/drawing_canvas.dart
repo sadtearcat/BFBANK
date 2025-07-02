@@ -25,11 +25,27 @@ class StrokePainter extends CustomPainter {
     for (final stroke in strokes) {
       if (stroke.points.length < 2) continue;
       
+      // 🔧 FIX: 스마트 연결 렌더링으로 숫자 3 → 8 왜곡 방지
       final path = Path();
       path.moveTo(stroke.points.first.dx, stroke.points.first.dy);
       
       for (int i = 1; i < stroke.points.length; i++) {
-        path.lineTo(stroke.points[i].dx, stroke.points[i].dy);
+        final currentPoint = stroke.points[i];
+        final previousPoint = stroke.points[i - 1];
+        
+        // 점 사이 거리 계산
+        final distance = (currentPoint - previousPoint).distance;
+        
+        // 🎯 거리 임계값: 너무 큰 점프는 연결하지 않음 (숫자 3의 라인 간 이동)
+        const double maxConnectionDistance = 50.0;
+        
+        if (distance <= maxConnectionDistance) {
+          // 정상적인 그리기: 연결
+          path.lineTo(currentPoint.dx, currentPoint.dy);
+        } else {
+          // 큰 점프 감지: 새로운 시작점으로 이동 (펜을 떼고 다시 대는 효과)
+          path.moveTo(currentPoint.dx, currentPoint.dy);
+        }
       }
       
       canvas.drawPath(path, stroke.paint);
@@ -120,6 +136,8 @@ class StrokePainter extends CustomPainter {
 class DrawingCanvas extends StatefulWidget {
   final Function(HandwritingPrediction)? onPrediction;
   final VoidCallback? onClear;
+  final VoidCallback? onDrawingStart;  // 🔧 ADD: 그리기 시작 콜백
+  final VoidCallback? onDrawingEnd;    // 🔧 ADD: 그리기 종료 콜백
   final bool isVisible;
   final Duration autoProcessDelay;
   final double? width;
@@ -129,6 +147,8 @@ class DrawingCanvas extends StatefulWidget {
     Key? key,
     this.onPrediction,
     this.onClear,
+    this.onDrawingStart,
+    this.onDrawingEnd,
     this.isVisible = true,
     this.autoProcessDelay = const Duration(milliseconds: 1000),
     this.width,
@@ -197,6 +217,9 @@ class DrawingCanvasState extends State<DrawingCanvas> {
 
     // 스트로크 시작 시 햅틱 피드백
     HapticFeedback.lightImpact();
+    
+    // 🔧 ADD: 그리기 시작 콜백 호출
+    widget.onDrawingStart?.call();
   }
 
   /// 터치 이동 처리
@@ -239,6 +262,9 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     // 스트로크 종료 시 가벼운 햅틱 피드백
     HapticFeedback.selectionClick();
     
+    // 🔧 ADD: 그리기 종료 콜백 호출
+    widget.onDrawingEnd?.call();
+    
     // 자동 처리 타이머 시작
     _startAutoProcessTimer();
   }
@@ -268,10 +294,33 @@ class DrawingCanvasState extends State<DrawingCanvas> {
     try {
       final modelService = HandwritingModelService();
       
-      // 4가지 개선사항이 모두 적용된 향상된 전처리 사용
+      // 🔍 [DEBUG] 원본 스트로크 데이터 확인
+      print('🔍 === 원본 스트로크 데이터 분석 ===');
+      for (int i = 0; i < _strokes.length; i++) {
+        final stroke = _strokes[i];
+        final bounds = stroke.bounds;
+        print('스트로크 $i: ${stroke.points.length}개 점');
+        print('  경계상자: (${bounds.left.toStringAsFixed(1)}, ${bounds.top.toStringAsFixed(1)}) ~ (${bounds.right.toStringAsFixed(1)}, ${bounds.bottom.toStringAsFixed(1)})');
+        print('  크기: ${bounds.width.toStringAsFixed(1)} x ${bounds.height.toStringAsFixed(1)}');
+        
+        // 🎨 [DEBUG] 스트로크 경로 시각화 (더 자세히)
+        print('  터치 경로:');
+        final stepSize = (stroke.points.length / 10).ceil(); // 최대 10개 점만 출력
+        for (int j = 0; j < stroke.points.length; j += stepSize) {
+          final point = stroke.points[j];
+          print('    ${(j / stroke.points.length * 100).toStringAsFixed(0)}%: (${point.dx.toStringAsFixed(1)}, ${point.dy.toStringAsFixed(1)})');
+        }
+        // 마지막 점도 출력
+        if (stroke.points.isNotEmpty) {
+          final lastPoint = stroke.points.last;
+          print('    100%: (${lastPoint.dx.toStringAsFixed(1)}, ${lastPoint.dy.toStringAsFixed(1)})');
+        }
+      }
+      
+      // ✅ 기본 전처리 사용 (좌표 변환 문제 해결)
       final inputTensor = await HandwritingPreprocessor.preprocessStrokesToTensor(
         _strokes,
-        enableAdvancedProcessing: true,  // 무게중심 정렬, 기울기 보정, 동적 선 굵기 활성화
+        enableAdvancedProcessing: false,  // ✅ 기본 처리로 변경 (좌표 스케일링 적용)
         enableTemperatureEnsemble: false, // 실시간 성능을 위해 앙상블 비활성화
       );
       
@@ -432,7 +481,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
       // 스트로크를 28x28 Float32List로 변환
       final tensorData = await HandwritingPreprocessor.preprocessStrokesToTensor(
         _strokes,
-        enableAdvancedProcessing: true,
+        enableAdvancedProcessing: false,  // ✅ 기본 처리로 변경 (좌표 스케일링 적용)
         enableTemperatureEnsemble: false,
       );
       

@@ -115,7 +115,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
         setState(() {
           _successfulPredictions++;
           _statusText = '✅ "${prediction.digit}" 인식됨 (신뢰도: ${(prediction.confidence * 100).toStringAsFixed(1)}%)';
-        });
+      });
       } else {
         setState(() {
           _statusText = '⚠️ 특수 기호 인식: ${prediction.digit}';
@@ -144,7 +144,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
       setState(() {
         _currentInput = _currentInput.substring(0, _currentInput.length - 1);
         _statusText = '🗑️ 마지막 숫자 삭제됨';
-      });
+    });
       HapticFeedback.mediumImpact();
     }
   }
@@ -188,12 +188,12 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
 
   /// 테스트 전용: 통계 리셋
   void _resetStats() {
-    setState(() {
+      setState(() {
       _totalPredictions = 0;
       _successfulPredictions = 0;
       _predictionHistory.clear();
       _statusText = '📊 통계 리셋됨';
-    });
+      });
   }
 
   /// 테스트 전용: 더미 숫자 5 테스트
@@ -272,8 +272,8 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                 width: 1,
               ),
             ),
-            child: Column(
-              children: [
+        child: Column(
+          children: [
                 const Text(
                   '입력된 숫자',
                   style: TextStyle(
@@ -306,28 +306,28 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
           ),
 
           // 상태 및 통계 표시 (테스트 전용)
-          Container(
+            Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
-            ),
+              ),
             child: Column(
               children: [
                 Text(
-                  _statusText,
-                  style: const TextStyle(
+                _statusText,
+                style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
+                textAlign: TextAlign.center,
+              ),
                 const SizedBox(height: 8),
-                Row(
+            Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
+              children: [
                     Text(
                       '총 예측: $_totalPredictions',
                       style: const TextStyle(color: Colors.white70, fontSize: 12),
@@ -335,7 +335,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                     Text(
                       '성공: $_successfulPredictions',
                       style: const TextStyle(color: Colors.green, fontSize: 12),
-                    ),
+                  ),
                     Text(
                       '성공률: $successRate%',
                       style: const TextStyle(color: Colors.yellow, fontSize: 12),
@@ -363,11 +363,11 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                 color: Colors.white70,
                 fontSize: 14,
                 height: 1.5,
-              ),
+            ),
               textAlign: TextAlign.center,
             ),
           ),
-
+            
           // 손글씨 캔버스 (실제 사용 패턴과 동일)
           Expanded(
             child: Container(
@@ -378,7 +378,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
               ),
               child: _isModelLoaded
                   ? DrawingCanvas(
-                      key: _canvasKey,
+                key: _canvasKey,
                       onPrediction: _handlePrediction, // 실제 사용 패턴과 동일
                       autoProcessDelay: const Duration(seconds: 1), // 실제 사용 패턴과 동일
                     )
@@ -387,9 +387,9 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
                       ),
                     ),
+              ),
             ),
-          ),
-
+            
           // 테스트 전용 컨트롤 버튼들
           Container(
             padding: const EdgeInsets.all(16),
@@ -409,7 +409,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                   label: '캔버스만',
                   onTap: _clearCanvas,
                   color: Colors.orange,
-                ),
+                    ),
                 _buildTestButton(
                   icon: Icons.bar_chart,
                   label: '통계 리셋',
@@ -423,7 +423,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                   color: Colors.green,
                 ),
               ],
-            ),
+                            ),
           ),
 
           // 예측 히스토리 (테스트 전용)
@@ -435,9 +435,9 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                 color: Colors.white.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                   const Text(
                     '최근 예측 히스토리:',
                     style: TextStyle(
@@ -445,7 +445,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
+                    ),
                   const SizedBox(height: 4),
                   ...(_predictionHistory.take(5).map((history) => Text(
                         history,
@@ -457,7 +457,7 @@ class _HandwritingTestPageState extends State<HandwritingTestPage> {
                 ],
               ),
             ),
-        ],
+          ],
       ),
     );
   }

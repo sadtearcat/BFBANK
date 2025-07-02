@@ -16,7 +16,8 @@ export 'utils/handwriting_preprocessor.dart';
 // UI widgets
 export 'widgets/drawing_canvas.dart';
 export 'widgets/handwriting_input_modal.dart';
+export 'widgets/handwriting_overlay_canvas.dart';  // 🔧 ADD: 새로운 오버레이 캔버스
 
 // Developer tools
 export 'widgets/handwriting_test_page.dart';
-export 'widgets/benchmark_test_page.dart'; 
+export 'widgets/benchmark_test_page.dart';
