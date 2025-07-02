@@ -60,6 +60,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _initializeSettingItems() {
     _settingItems = [
+      // 개발자 도구 (개발용으로 첫 번째 위치)
+      SettingItem(
+        type: SettingType.action,
+        title: '개발자 옵션',
+        description: '개발자를 위한 테스트 도구와 디버깅 기능을 제공합니다. 손글씨 인식 벤치마크, TTS 테스트, 햅틱 테스트 등이 포함되어 있습니다',
+        category: '개발자 도구',
+        onAction: () {
+          _hapticService.vibrateCustomSequence('tick');
+          _ttsService.speak('개발자 옵션 페이지로 이동합니다.');
+          Navigator.pushNamed(context, '/developer-options');
+        },
+      ),
+      
       // 사용자 정보
       SettingItem(
         type: SettingType.info,
@@ -286,6 +299,9 @@ class _SettingsPageState extends State<SettingsPage> {
           break;
         case SettingType.info:
           message += ' 터치하여 정보를 확인할 수 있습니다.';
+          break;
+        case SettingType.action:
+          message += ' 더블 탭하여 해당 기능을 실행할 수 있습니다.';
           break;
       }
       
@@ -710,6 +726,8 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       case SettingType.info:
         return const Icon(Icons.info, color: Colors.orange, size: 40);
+      case SettingType.action:
+        return const Icon(Icons.launch, color: Colors.green, size: 40);
       default:
         return const SizedBox.shrink();
     }
@@ -739,6 +757,11 @@ class _SettingsPageState extends State<SettingsPage> {
         break;
       case SettingType.info:
         _speakCurrentSetting();
+        break;
+      case SettingType.action:
+        if (item.onAction != null) {
+          item.onAction!();
+        }
         break;
     }
   }
@@ -836,7 +859,7 @@ class _SettingsPageState extends State<SettingsPage> {
 }
 
 // 설정 항목 모델
-enum SettingType { toggle, slider, intSlider, info }
+enum SettingType { toggle, slider, intSlider, info, action }
 
 class SettingItem {
   final SettingType type;
@@ -850,6 +873,7 @@ class SettingItem {
   final Function(double)? onSliderChange;
   final Function(double)? onSliderEnd;
   final Function(int)? onIntSliderChange;
+  final VoidCallback? onAction;
 
   SettingItem({
     required this.type,
@@ -863,5 +887,6 @@ class SettingItem {
     this.onSliderChange,
     this.onSliderEnd,
     this.onIntSliderChange,
+    this.onAction,
   });
 } 

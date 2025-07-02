@@ -8,6 +8,9 @@ import 'features/bfbank/presentation/pages/check_history_page.dart';
 import 'features/bfbank/presentation/pages/check_history_detail_page.dart';
 import 'features/bfbank/presentation/pages/payment_page.dart';
 import 'features/bfbank/presentation/pages/settings_page.dart';
+import 'features/handwriting_recognition/widgets/benchmark_test_page.dart';
+import 'features/handwriting_recognition/widgets/handwriting_test_page.dart';
+import 'features/bfbank/presentation/pages/developer_options_page.dart';
 
 // 앱 라우팅 관리
 class AppRoutes {
@@ -20,6 +23,9 @@ class AppRoutes {
   static const String payment = '/payment';
   static const String settings = '/settings';
   static const String aiTest = '/ai-test';
+  static const String benchmarkTest = '/benchmark-test';
+  static const String handwritingTest = '/handwriting-test';
+  static const String developerOptions = '/developer-options';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     // 애니메이션 없는 페이지 전환을 위한 공통 함수
@@ -66,6 +72,12 @@ class AppRoutes {
         return _buildPageWithoutAnimation(const SettingsPage());
       case aiTest:
         return _buildPageWithoutAnimation(const HomePage());
+      case benchmarkTest:
+        return _buildPageWithoutAnimation(const BenchmarkTestPage());
+      case handwritingTest:
+        return _buildPageWithoutAnimation(const HandwritingTestPage());
+      case developerOptions:
+        return _buildPageWithoutAnimation(const DeveloperOptionsPage());
       default:
         return _buildPageWithoutAnimation(
           Scaffold(
