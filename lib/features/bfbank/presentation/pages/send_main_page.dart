@@ -23,7 +23,7 @@ class _SendMainPageState extends State<SendMainPage> {
   @override
   void initState() {
     super.initState();
-    // React Native와 동일한 TTS 메시지
+    // 페이지 로드 후 자동 음성 안내
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _speakPageGuide();
     });
@@ -41,7 +41,7 @@ class _SendMainPageState extends State<SendMainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // DefaultPage 배경색과 일치
+햣햣      backgroundColor: Colors.black, // DefaultPage 배경색과 일치
       body: SafeArea(
         child: DefaultPage(
           // 🔧 더블탭 로직이 포함된 DefaultPage 사용
