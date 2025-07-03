@@ -47,7 +47,7 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
   }
 
   void _speakMainScreenGuide() {
-    // React Native와 정확히 동일한 메시지
+    // 메인 화면 음성 안내
     const guide = '''메인 화면입니다.
 결제를 원하시면 왼쪽 위,
 설정을 원하시면 오른쪽 위,

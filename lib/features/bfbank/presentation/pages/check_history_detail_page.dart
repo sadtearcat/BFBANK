@@ -46,7 +46,7 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
 
   void _speakPageGuide() {
     _hapticService.vibrateCustomSequence('notification');
-    // React Native와 정확히 동일한 메시지
+    // 거래 상세 화면 음성 안내
     const guide = '''거래 내역 상세 화면입니다.
 아래 버튼을 누르면 계좌 조회 페이지로 이동됩니다.
 왼쪽 위에는 이전 버튼이, 오른쪽 위에는 홈 버튼이 있습니다.''';
@@ -56,7 +56,7 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
   void _speakTransactionDetail() {
     final typeLabel = widget.transaction.typeLabel;
     
-    // React Native formatDateManually와 동일한 형식
+    // 날짜 포맷팅
     String formattedDate;
     String formattedTime;
     
@@ -73,7 +73,7 @@ class _CheckHistoryDetailPageState extends State<CheckHistoryDetailPage> {
       print('Error using DateFormat: $e');
     }
     
-    // React Native와 동일한 TTS 메시지 형식
+    // TTS 상세 정보 메시지
     final fullMessage = '''$formattedDate
 
 $formattedTime
@@ -115,7 +115,7 @@ ${typeLabel}되었습니다.''';
           onUpperRightPress: () => _handleHome(context),
           onLowerLeftPress: () => _handleBack(context),
           onLowerRightPress: () => _handleBack(context),
-          // React Native와 동일한 더블탭 TTS 메시지
+          // 더블탭 TTS 메시지
           upperLeftTTS: '이전',
           upperRightTTS: '메인',
           lowerLeftTTS: '취소',
@@ -149,7 +149,7 @@ ${typeLabel}되었습니다.''';
   }
 
   Widget _buildTransactionDetailContent() {
-    // 안전한 DateFormat 사용 - React Native formatDateManually와 동일한 형식
+    // 안전한 DateFormat 사용
     String formattedDate;
     String formattedTime;
     
@@ -173,7 +173,7 @@ ${typeLabel}되었습니다.''';
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // 음성 안내 버튼 (React Native와 동일한 스타일)
+          // 음성 안내 버튼
           Container(
             margin: const EdgeInsets.only(bottom: 32),
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
@@ -197,7 +197,7 @@ ${typeLabel}되었습니다.''';
             ),
           ),
           
-          // 날짜와 시간 (React Native와 동일한 레이아웃)
+          // 날짜와 시간
           Column(
             children: [
               Text(
@@ -222,7 +222,7 @@ ${typeLabel}되었습니다.''';
 
           const SizedBox(height: 8),
 
-          // 거래 이름 (React Native와 동일한 스타일)
+          // 거래 이름
           Text(
             widget.transaction.transactionName,
             style: const TextStyle(
@@ -235,7 +235,7 @@ ${typeLabel}되었습니다.''';
 
           const SizedBox(height: 26),
 
-          // 거래 타입과 금액 (React Native bankContainer와 동일한 레이아웃)
+          // 거래 타입과 금액
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

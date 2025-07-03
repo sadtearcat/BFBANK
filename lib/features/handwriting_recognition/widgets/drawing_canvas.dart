@@ -167,7 +167,7 @@ class DrawingCanvasState extends State<DrawingCanvas> {
   Offset? _lastPoint;
   HandwritingPrediction? _latestPrediction;
   
-  // 점프 감지 (React Native 구현과 유사)
+  // 점프 감지 (터치 이벤트 불연속성 처리)
   static const double maxJumpDistance = 100.0;
 
   @override
