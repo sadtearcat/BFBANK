@@ -162,10 +162,10 @@ import '../models/handwriting_prediction.dart';
 ///    - 3채널 RGB만 지원, 1채널 그레이스케일 처리 불가 ⭐ **핵심 문제**
 ///    - 색상 반전 (enableColorInversion) 미지원
 ///    - 최대값 정규화 (enableMaxNormalization) 미지원
-///    - React Native 방식의 단순한 전처리 불가능
+///    - 단순한 전처리 방식 지원 제한
 /// 
 /// 3. 🚫 **후처리 (Postprocessing) 한계:**
-///    - top1Index 직접 반환 불가 (React Native 방식)
+///    - top1Index 직접 반환 제한
 ///    - 커스텀 classification 결과 형식 미지원
 ///    - EMNIST 라벨 매핑 (10→✓, 11→✗) 복잡함
 /// 
@@ -207,14 +207,28 @@ import '../models/handwriting_prediction.dart';
 /// **복잡성의 이유:**
 /// - 원본 Ultralytics는 범용 YOLO 라이브러리 (detection, segmentation, pose 등)
 /// - EMNIST 손글씨 인식은 매우 특화된 use case
-/// - React Native는 TensorFlow Lite 직접 호출로 단순함
+/// - 다른 플랫폼에서는 TensorFlow Lite 직접 호출이 단순함
 /// - Flutter는 플랫폼 채널을 통한 Kotlin 브릿지 필요
 /// - 6개 파일이 유기적으로 연결되어 하나라도 빠지면 전체 실패
 /// 
 /// 🎯 **성공 지표:**
 /// 1차: 손글씨 숫자 인식 작동 (정확도 무관)
-/// 2차: 1채널 지원으로 성능 개선 (React Native 수준)
+/// 2차: 1채널 지원으로 성능 개선
 /// 3차: 범용 옵션으로 오픈소스 기여
+/// 
+/// 🔧 [TECHNICAL NOTES - Flutter TensorFlow Lite 구현]
+/// 
+/// Flutter TensorFlow Lite의 특징:
+/// - 장점: 직접적인 메모리 제어, 효율적인 데이터 변환
+/// - 단점: 복잡한 전처리 파이프라인, 최적화 필요
+/// - 제약: top1Index 직접 반환 불가, 단순 전처리 지원 없음
+/// 
+/// 현재 구현 우선순위:
+/// - TensorFlow Lite는 복잡한 추론 과정 필요
+/// 
+/// 향후 최적화 계획:
+/// 1차: 현재 구조로 기본 기능 완성 ✅ 
+/// 2차: 1채널 지원으로 성능 개선
 class HandwritingModelService {
   static final HandwritingModelService _instance = HandwritingModelService._internal();
 
