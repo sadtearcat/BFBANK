@@ -416,11 +416,13 @@ class _SendPasswordPageState extends State<SendPasswordPage> {
         // 송금 성공 페이지로 이동
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => SendSuccessPage(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => SendSuccessPage(
               selectedAccount: widget.selectedAccount,
               amount: widget.amount,
             ),
+            transitionDuration: Duration.zero, // 애니메이션 시간 0
+            reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
           ),
         );
       } else {

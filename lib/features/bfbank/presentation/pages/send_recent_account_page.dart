@@ -313,10 +313,12 @@ ${date}에
       
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => ReceivingAccountPage(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => ReceivingAccountPage(
             selectedAccount: selectedAccountMap,
           ),
+          transitionDuration: Duration.zero, // 애니메이션 시간 0
+          reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
         ),
       );
     }

@@ -355,11 +355,13 @@ class _SendAmountPageState extends State<SendAmountPage> {
         _ttsService.speak('금액이 확인되었습니다. 비밀번호를 입력해주세요.');
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => SendPasswordPage(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => SendPasswordPage(
               selectedAccount: widget.selectedAccount,
               amount: amount,
             ),
+            transitionDuration: Duration.zero, // 애니메이션 시간 0
+            reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
           ),
         );
       } catch (e) {

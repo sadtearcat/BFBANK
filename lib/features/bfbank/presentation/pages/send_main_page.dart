@@ -41,7 +41,7 @@ class _SendMainPageState extends State<SendMainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-햣햣      backgroundColor: Colors.black, // DefaultPage 배경색과 일치
+      backgroundColor: Colors.black, // DefaultPage 배경색과 일치
       body: SafeArea(
         child: DefaultPage(
           // 🔧 더블탭 로직이 포함된 DefaultPage 사용
@@ -154,21 +154,27 @@ class _SendMainPageState extends State<SendMainPage> {
   }
 
   void _handleDirectInput(BuildContext context) {
-    // 계좌번호 직접 입력 페이지로 이동
+    // 계좌번호 직접 입력 페이지로 이동 (애니메이션 없이)
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SendInputPage(type: 'directOtherAccount'),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => 
+          const SendInputPage(type: 'directOtherAccount'),
+        transitionDuration: Duration.zero, // 애니메이션 시간 0
+        reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
       ),
     );
   }
 
   void _handleRecentAccount(BuildContext context) {
-    // 최근 송금 계좌 선택 페이지로 이동
+    // 최근 송금 계좌 선택 페이지로 이동 (애니메이션 없이)
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const SendRecentAccountPage(),
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => 
+          const SendRecentAccountPage(),
+        transitionDuration: Duration.zero, // 애니메이션 시간 0
+        reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
       ),
     );
   }
@@ -421,10 +427,12 @@ class _SendInputPageState extends State<SendInputPage> {
         
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => ReceivingAccountPage(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => ReceivingAccountPage(
               selectedAccount: selectedAccount,
             ),
+            transitionDuration: Duration.zero, // 애니메이션 시간 0
+            reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
           ),
         );
       } catch (e) {
