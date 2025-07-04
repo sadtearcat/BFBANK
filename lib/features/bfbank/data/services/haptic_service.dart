@@ -2,7 +2,7 @@ import 'package:gaimon/gaimon.dart';
 import 'dart:async';
 
 /// 햅틱 피드백 서비스
-/// React Native CustomVibrationModule과 동일한 패턴 구현
+/// 시각장애인을 위한 다양한 진동 패턴 구현
 class HapticService {
   static final HapticService _instance = HapticService._internal();
   factory HapticService() => _instance;
@@ -37,7 +37,7 @@ class HapticService {
   /// 인스턴스 getter 추가 (싱글톤 접근용)
   static HapticService get instance => _instance;
 
-  /// React Native CustomVibration과 동일한 패턴으로 진동 실행
+  /// 진동 패턴으로 진동 실행
   Future<void> vibrateCustomSequence(String name) async {
     if (!_isEnabled) return;
 
@@ -146,9 +146,9 @@ class HapticService {
     }
   }
 
-  // React Native 패턴 구현 - 알림용 진동 패턴: 짧게-긴 진동 (매우 강함)
+  // 알림용 진동 패턴: 짧게-긴 진동 (매우 강함)
   void _vibrateNotification() {
-    Gaimon.heavy(); // 100ms 강한 진동
+    Gaimon.heavy(); // 강한 진동으로 변경
     Timer(const Duration(milliseconds: 50), () => Gaimon.heavy()); // 추가 강도
     Timer(const Duration(milliseconds: 100), () {
       Gaimon.heavy(); // 추가 강한 진동
@@ -218,7 +218,7 @@ class HapticService {
 
   // 짧은 틱 진동 (버튼 터치 등): 매우 강한 진동으로 변경
   void _vibrateTick() {
-    Gaimon.heavy(); // React Native처럼 강한 진동으로 변경
+    Gaimon.heavy(); // 강한 진동으로 변경
     Timer(const Duration(milliseconds: 25), () => Gaimon.heavy()); // 추가 강도
   }
 

@@ -11,8 +11,7 @@ class AutoTTSService {
   
   AutoTTSService._internal();
 
-  /// React Native의 useTTSOnFocus와 동일한 기능
-  /// 페이지 진입 시 자동으로 TTS 재생
+  /// 페이지 진입 시 자동 TTS 기능
   void speakOnPageEnter(String message) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 500), () {

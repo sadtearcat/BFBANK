@@ -62,7 +62,7 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
 
   void _speakPageGuide() {
     _hapticService.vibrateCustomSequence('notification');
-    // React Native와 정확히 동일한 메시지
+    // 거래 내역 화면 음성 안내
     const guide = '''계좌 내역 화면입니다.
 화면 가운데를 좌우로 움직여 계좌 내역을 조회할 수 있습니다.
 왼쪽 아래와 오른쪽 아래 버튼을 눌러도 계좌 내역을 넘길 수 있습니다.
@@ -133,7 +133,7 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
           onUpperRightPress: () => _handleHome(context),
           onLowerLeftPress: _handlePreviousTransaction,
           onLowerRightPress: _handleNextTransaction,
-          // React Native와 동일한 더블탭 TTS 메시지
+          // 더블탭 TTS 메시지
           upperLeftTTS: '이전',
           upperRightTTS: '메인',
           lowerLeftTTS: '이전',

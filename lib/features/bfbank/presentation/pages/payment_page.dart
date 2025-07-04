@@ -128,7 +128,7 @@ class _PaymentPageState extends State<PaymentPage> {
           onUpperRightPress: () => _handleHome(context),
           onLowerLeftPress: null,
           onLowerRightPress: null,
-          // React Native와 동일한 더블탭 TTS 메시지
+          // 더블탭 TTS 메시지
           upperLeftTTS: '이전',
           upperRightTTS: '메인',
           lowerLeftTTS: '취소',
@@ -165,37 +165,31 @@ class _PaymentPageState extends State<PaymentPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Voice Button (React Native와 동일)
-        GestureDetector(
-          onTap: () {
-            _hapticService.vibrateCustomSequence('tick');
-            _speakPageGuide();
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF333333),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SvgPicture.asset('assets/icons/Volume.svg', width: 30, height: 30, color: Colors.white),
-                const SizedBox(width: 20),
-                const Text(
-                  '결제 하기',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                  ),
+        // 음성 안내 버튼
+        Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF333333),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SvgPicture.asset('assets/icons/Volume.svg', width: 30, height: 30, color: Colors.white),
+              const SizedBox(width: 20),
+              const Text(
+                '결제 하기',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 25,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         
-        // QR Container (React Native PaymentMainScreen과 동일)
+        // QR 코드 표시 영역
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
