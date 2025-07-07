@@ -11,6 +11,7 @@ import 'features/bfbank/presentation/pages/settings_page.dart';
 import 'features/handwriting_recognition/widgets/benchmark_test_page.dart';
 import 'features/handwriting_recognition/widgets/handwriting_test_page.dart';
 import 'features/bfbank/presentation/pages/developer_options_page.dart';
+import 'features/bfbank/presentation/pages/create_account_main_page.dart';
 
 // 앱 라우팅 관리
 class AppRoutes {
@@ -26,6 +27,7 @@ class AppRoutes {
   static const String benchmarkTest = '/benchmark-test';
   static const String handwritingTest = '/handwriting-test';
   static const String developerOptions = '/developer-options';
+  static const String createAccount = '/create-account';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     // 애니메이션 없는 페이지 전환을 위한 공통 함수
@@ -78,6 +80,8 @@ class AppRoutes {
         return _buildPageWithoutAnimation(const HandwritingTestPage());
       case developerOptions:
         return _buildPageWithoutAnimation(const DeveloperOptionsPage());
+      case createAccount:
+        return _buildPageWithoutAnimation(const CreateAccountMainPage());
       default:
         return _buildPageWithoutAnimation(
           Scaffold(

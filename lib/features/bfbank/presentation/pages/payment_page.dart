@@ -56,8 +56,12 @@ class _PaymentPageState extends State<PaymentPage> {
     setState(() => _isGenerating = true);
     
     try {
-      final user = IntegratedDummyDataService.getCurrentUser();
-      final account = IntegratedDummyDataService.getCurrentUserAccount();
+      final user = await IntegratedDummyDataService.getCurrentUser();
+      final account = await IntegratedDummyDataService.getCurrentUserAccount();
+      
+      if (user == null || account == null) {
+        throw Exception('사용자 또는 계좌 정보를 가져올 수 없습니다');
+      }
       
       _expiresAt = DateTime.now().add(const Duration(milliseconds: qrValidDurationMs));
       _remainingTime = _formatRemainingTime(qrValidDurationMs);

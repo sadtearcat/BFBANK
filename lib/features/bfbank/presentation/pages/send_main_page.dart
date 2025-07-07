@@ -154,27 +154,21 @@ class _SendMainPageState extends State<SendMainPage> {
   }
 
   void _handleDirectInput(BuildContext context) {
-    // 계좌번호 직접 입력 페이지로 이동 (애니메이션 없이)
+    // 계좌번호 직접 입력 페이지로 이동
     Navigator.push(
       context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
-          const SendInputPage(type: 'directOtherAccount'),
-        transitionDuration: Duration.zero, // 애니메이션 시간 0
-        reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
+      MaterialPageRoute(
+        builder: (context) => const SendInputPage(type: 'directOtherAccount'),
       ),
     );
   }
 
   void _handleRecentAccount(BuildContext context) {
-    // 최근 송금 계좌 선택 페이지로 이동 (애니메이션 없이)
+    // 최근 송금 계좌 선택 페이지로 이동
     Navigator.push(
       context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => 
-          const SendRecentAccountPage(),
-        transitionDuration: Duration.zero, // 애니메이션 시간 0
-        reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
+      MaterialPageRoute(
+        builder: (context) => const SendRecentAccountPage(),
       ),
     );
   }
@@ -427,12 +421,10 @@ class _SendInputPageState extends State<SendInputPage> {
         
         Navigator.push(
           context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) => ReceivingAccountPage(
+          MaterialPageRoute(
+            builder: (context) => ReceivingAccountPage(
               selectedAccount: selectedAccount,
             ),
-            transitionDuration: Duration.zero, // 애니메이션 시간 0
-            reverseTransitionDuration: Duration.zero, // 뒤로가기 애니메이션 시간도 0
           ),
         );
       } catch (e) {
