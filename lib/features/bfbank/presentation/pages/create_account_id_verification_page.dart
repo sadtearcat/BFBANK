@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/models/account_product.dart';
 import '../../data/services/integrated_dummy_data_service.dart';
 import '../../data/services/tts_service.dart';
+import '../../data/services/haptic_service.dart';
 import '../widgets/default_page.dart';
 import '../../../object_detection/presentation/pages/camera_detection_page.dart';
 import 'create_account_password_page.dart';
@@ -20,6 +22,7 @@ class CreateAccountIdVerificationPage extends StatefulWidget {
 
 class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerificationPage> {
   final TtsService _ttsService = TtsService();
+  final HapticService _hapticService = HapticService();
   
   bool _isProcessing = false;
   Map<String, String>? _ocrResult;
@@ -28,10 +31,22 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
   @override
   void initState() {
     super.initState();
-    _ttsService.speak('본인 인증 페이지입니다. 신분증을 준비하시고 오른쪽 아래 신분증 촬영 버튼을 눌러주세요.');
+    
+    // 페이지 진입 시 자동 음성 안내와 햅틱
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _hapticService.vibrateCustomSequence('notification');
+      _ttsService.speak('본인 인증 페이지입니다. 신분증을 준비하시고 오른쪽 아래 신분증 촬영 버튼을 눌러주세요.');
+    });
+  }
+
+  @override
+  void dispose() {
+    _ttsService.dispose();
+    super.dispose();
   }
 
   void _handleStartCamera() {
+    _hapticService.vibrateCustomSequence('tick');
     setState(() {
       _verificationStatus = 'camera';
     });
@@ -77,6 +92,7 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
           _isProcessing = false;
         });
         
+        _hapticService.vibrateCustomSequence('success');
         _ttsService.speak('본인 인증이 완료되었습니다. ${result['name']}님, 계좌 비밀번호를 설정해주세요.');
       } else {
         setState(() {
@@ -84,6 +100,7 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
           _isProcessing = false;
         });
         
+        _hapticService.vibrateCustomSequence('error');
         _ttsService.speak('신분증 인식에 실패했습니다. 다시 시도해주세요.');
       }
     } catch (e) {
@@ -92,11 +109,13 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
         _isProcessing = false;
       });
       
+      _hapticService.vibrateCustomSequence('error');
       _ttsService.speak('인증 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   }
 
   void _handleRetry() {
+    _hapticService.vibrateCustomSequence('tick');
     setState(() {
       _verificationStatus = 'idle';
       _ocrResult = null;
@@ -107,6 +126,7 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
 
   void _handleConfirm() {
     if (_ocrResult != null) {
+      _hapticService.vibrateCustomSequence('tick');
       _ttsService.speak('계좌 비밀번호 설정으로 이동합니다.');
       
       Navigator.push(
@@ -124,18 +144,25 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
   }
 
   void _handleGoBack() {
+    _hapticService.vibrateCustomSequence('tick');
     Navigator.pop(context);
   }
 
   void _handleGoHome() {
+    _hapticService.vibrateCustomSequence('tick');
     Navigator.popUntil(context, (route) => route.isFirst);
   }
 
-  Widget _buildButtonContent(IconData icon, String text) {
+  Widget _buildButtonContent(String assetPath, String text) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: Colors.white, size: 32),
+        SvgPicture.asset(
+          assetPath,
+          width: 48,
+          height: 48,
+          color: Colors.white,
+        ),
         const SizedBox(height: 8),
         Text(
           text,
@@ -152,51 +179,91 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
 
   @override
   Widget build(BuildContext context) {
-    return DefaultPage(
-      upperLeftWidget: _buildButtonContent(Icons.arrow_back, '이전'),
-      upperRightWidget: _buildButtonContent(Icons.home, '메인'),
-      lowerLeftWidget: _buildButtonContent(
-        _verificationStatus == 'success' ? Icons.refresh : Icons.cancel,
-        _verificationStatus == 'success' ? '재촬영' : '취소',
-      ),
-      lowerRightWidget: _buildButtonContent(
-        _verificationStatus == 'success' ? Icons.check : Icons.camera_alt,
-        _verificationStatus == 'success' ? '확인' : '신분증촬영',
-      ),
-      onUpperLeftPress: _handleGoBack,
-      onUpperRightPress: _handleGoHome,
-      onLowerLeftPress: _verificationStatus == 'success' ? _handleRetry : _handleGoBack,
-      onLowerRightPress: _verificationStatus == 'success' ? _handleConfirm : _handleStartCamera,
-      mainWidget: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 제목
-            const Text(
-              '본인 인증',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            Text(
-              '${widget.product.name} 계좌 개설',
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 32),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: DefaultPage(
+          upperLeftWidget: _buildButtonContent('assets/icons/GoBack.svg', '이전'),
+          upperRightWidget: _buildButtonContent('assets/icons/Home.svg', '메인'),
+          lowerLeftWidget: _buildButtonContent(
+            _verificationStatus == 'success' ? 'assets/icons/Cancel.svg' : 'assets/icons/Cancel.svg',
+            _verificationStatus == 'success' ? '재촬영' : '취소',
+          ),
+          lowerRightWidget: _buildButtonContent(
+            _verificationStatus == 'success' ? 'assets/icons/Check.svg' : 'assets/icons/QR.svg',
+            _verificationStatus == 'success' ? '확인' : '신분증촬영',
+          ),
+          onUpperLeftPress: _handleGoBack,
+          onUpperRightPress: _handleGoHome,
+          onLowerLeftPress: _verificationStatus == 'success' ? _handleRetry : _handleGoBack,
+          onLowerRightPress: _verificationStatus == 'success' ? _handleConfirm : _handleStartCamera,
+          // TTS 메시지 추가
+          upperLeftTTS: '이전',
+          upperRightTTS: '메인',
+          lowerLeftTTS: _verificationStatus == 'success' ? '재촬영' : '취소',
+          lowerRightTTS: _verificationStatus == 'success' ? '확인' : '신분증촬영',
+          mainWidget: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 음성 안내 버튼
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF333333),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      _hapticService.vibrateCustomSequence('tick');
+                      _ttsService.speak('본인 인증 페이지입니다. 신분증을 준비하시고 오른쪽 아래 신분증 촬영 버튼을 눌러주세요.');
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset('assets/icons/Volume.svg', width: 30, height: 30, color: Colors.white),
+                        const SizedBox(width: 20),
+                        const Text(
+                          '본인 인증',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                // 제목
+                const Text(
+                  '본인 인증',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
 
-            // 상태별 콘텐츠
-            Expanded(
-              child: _buildStatusContent(),
+                Text(
+                  '${widget.product.name} 계좌 개설',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // 상태별 콘텐츠
+                Expanded(
+                  child: _buildStatusContent(),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -205,15 +272,125 @@ class _CreateAccountIdVerificationPageState extends State<CreateAccountIdVerific
   Widget _buildStatusContent() {
     switch (_verificationStatus) {
       case 'idle':
-        return _buildIdleContent();
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.credit_card,
+              size: 64,
+              color: Colors.white70,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '신분증을 준비해주세요',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '본인 확인을 위해 신분증 촬영이 필요합니다.\n오른쪽 아래 신분증촬영 버튼을 눌러주세요.',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+
+      case 'camera':
       case 'processing':
-        return _buildProcessingContent();
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: Colors.white),
+            const SizedBox(height: 24),
+            Text(
+              _verificationStatus == 'camera' ? '카메라를 시작하고 있습니다...' : '신분증을 인식하고 있습니다...',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        );
+
       case 'success':
-        return _buildSuccessContent();
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.check_circle,
+              size: 64,
+              color: Colors.green,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '본인 인증 완료',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (_ocrResult != null) ...[
+              Text(
+                '${_ocrResult!['name']}님',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '본인 확인이 완료되었습니다.\n오른쪽 아래 확인 버튼을 눌러 계속 진행하세요.',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        );
+
       case 'failed':
-        return _buildFailedContent();
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              '인증 실패',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '신분증 인식에 실패했습니다.\n다시 시도해주세요.',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+
       default:
-        return _buildIdleContent();
+        return const SizedBox();
     }
   }
 
