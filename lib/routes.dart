@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'features/navigation/presentation/pages/home_page.dart';
 import 'features/object_detection/presentation/pages/camera_detection_page.dart';
+import 'features/object_detection/presentation/pages/gallery_page.dart';
 import 'features/bfbank/presentation/pages/splash_page.dart';
 import 'features/bfbank/presentation/pages/main_page.dart';
 import 'features/bfbank/presentation/pages/send_main_page.dart';
@@ -17,6 +18,8 @@ import 'features/bfbank/presentation/pages/create_account_main_page.dart';
 class AppRoutes {
   static const String home = '/';
   static const String camera = '/camera';
+  static const String cameraDetection = '/camera-detection';
+  static const String gallery = '/gallery';
   static const String bfbankMain = '/bfbank-main';
   static const String sendMain = '/send-main';
   static const String checkHistory = '/check-history';
@@ -45,6 +48,10 @@ class AppRoutes {
         return _buildPageWithoutAnimation(const SplashPage());
       case camera:
         return _buildPageWithoutAnimation(const CameraDetectionPage());
+      case cameraDetection:
+        return _buildPageWithoutAnimation(const CameraDetectionPage());
+      case gallery:
+        return _buildPageWithoutAnimation(const GalleryPage(croppedImages: []));
       case bfbankMain:
         return _buildPageWithoutAnimation(const BFBankMainPage());
       case sendMain:
