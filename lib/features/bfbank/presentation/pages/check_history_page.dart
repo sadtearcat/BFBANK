@@ -41,13 +41,23 @@ class _CheckHistoryPageState extends State<CheckHistoryPage> {
     });
   }
 
-  void _loadTransactionHistoriesSync() {
-    // 동기적으로 더미 데이터 즉시 로드
-    setState(() {
-      _histories = IntegratedDummyDataService.getTransactionHistories();
-      _hasAccount = DevConfig.enableAutoAccountAssignment;
-      _isLoading = false;
-    });
+  void _loadTransactionHistoriesSync() async {
+    // 비동기적으로 더미 데이터 로드
+    try {
+      final histories = await IntegratedDummyDataService.getTransactionHistories();
+      setState(() {
+        _histories = histories;
+        _hasAccount = DevConfig.enableAutoAccountAssignment;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _histories = [];
+        _hasAccount = false;
+        _isLoading = false;
+      });
+      print('Error loading transaction histories: $e');
+    }
   }
 
   Future<void> _initializeServicesAsync() async {

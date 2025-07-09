@@ -51,8 +51,52 @@ class _DeveloperOptionsPageState extends State<DeveloperOptionsPage> {
           crossAxisCount: 2,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.2,
+          childAspectRatio: 0.85,
           children: [
+            // 신분증 관련 객체인식 기능들 추가
+            _buildOptionCard(
+              title: 'ID Card\nDetection',
+              subtitle: 'Object Detection Test',
+              icon: Icons.camera_alt,
+              color: Colors.cyan,
+              onTap: () {
+                _hapticService.vibrateCustomSequence('tick');
+                _ttsService.speak('신분증 객체 탐지 테스트를 시작합니다.');
+                Navigator.pushNamed(context, '/camera-detection');
+              },
+            ),
+            _buildOptionCard(
+              title: 'OCR\nTesting',
+              subtitle: 'Text Recognition',
+              icon: Icons.text_fields,
+              color: Colors.amber,
+              onTap: () {
+                _hapticService.vibrateCustomSequence('tick');
+                _ttsService.speak('OCR 텍스트 인식 테스트를 시작합니다.');
+                _showOcrTestDialog();
+              },
+            ),
+            _buildOptionCard(
+              title: 'Detection\nGallery',
+              subtitle: 'Captured Objects',
+              icon: Icons.photo_library,
+              color: Colors.pink,
+              onTap: () {
+                _hapticService.vibrateCustomSequence('tick');
+                _ttsService.speak('객체 탐지 갤러리를 엽니다.');
+                Navigator.pushNamed(context, '/gallery');
+              },
+            ),
+            _buildOptionCard(
+              title: 'Performance\nMonitor',
+              subtitle: 'Object Detection Stats',
+              icon: Icons.monitor,
+              color: Colors.deepOrange,
+              onTap: () {
+                _hapticService.vibrateCustomSequence('tick');
+                _showPerformanceMonitorDialog();
+              },
+            ),
             _buildOptionCard(
               title: 'Handwriting\nBenchmark',
               subtitle: 'Performance Testing',
@@ -143,38 +187,47 @@ class _DeveloperOptionsPageState extends State<DeveloperOptionsPage> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  size: 32,
+                  size: 28,
                   color: color,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 8),
+              Flexible(
+                child: Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 12,
+              ),
+              const SizedBox(height: 4),
+              Flexible(
+                child: Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey[400],
+                    fontSize: 11,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -439,6 +492,198 @@ class _DeveloperOptionsPageState extends State<DeveloperOptionsPage> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close', style: TextStyle(color: Colors.blue)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showOcrTestDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[800],
+        title: const Text(
+          'OCR Testing Options',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'OCR (광학 문자 인식) 기능을 테스트합니다:',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 20),
+            _buildTestButton(
+              'Camera OCR Test',
+              '실시간 카메라 OCR 테스트',
+              Icons.camera,
+              Colors.cyan,
+              () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/camera-detection');
+              },
+            ),
+            const SizedBox(height: 12),
+            _buildTestButton(
+              'Gallery OCR Test',
+              '갤러리 이미지 OCR 테스트',
+              Icons.photo_library,
+              Colors.pink,
+              () {
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/gallery');
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close', style: TextStyle(color: Colors.blue)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPerformanceMonitorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[800],
+        title: const Text(
+          'Performance Monitor',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Object Detection Performance:',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildPerformanceItem('YOLO Model', 'YOLO v8 Nano', Colors.green),
+              _buildPerformanceItem('Target FPS', '10 FPS', Colors.blue),
+              _buildPerformanceItem('Input Resolution', '640x640', Colors.orange),
+              _buildPerformanceItem('Detection Classes', 'ID Card, Text', Colors.purple),
+              const SizedBox(height: 16),
+              const Text(
+                'OCR Performance:',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildPerformanceItem('OCR Engine', 'TensorFlow Lite', Colors.cyan),
+              _buildPerformanceItem('Text Languages', 'Korean, English', Colors.amber),
+              _buildPerformanceItem('Queue Processing', 'Async Background', Colors.teal),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/camera-detection');
+                },
+                icon: const Icon(Icons.play_arrow),
+                label: const Text('Start Live Monitoring'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close', style: TextStyle(color: Colors.blue)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestButton(
+    String title,
+    String description,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPerformanceItem(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey[400]),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

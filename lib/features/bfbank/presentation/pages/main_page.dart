@@ -4,6 +4,7 @@ import '../widgets/default_page.dart';
 import '../../data/services/tts_service.dart';
 import '../../data/services/haptic_service.dart';
 import '../../data/services/integrated_dummy_data_service.dart';
+import '../../data/services/user_state_service.dart';
 
 class BFBankMainPage extends StatefulWidget {
   const BFBankMainPage({Key? key}) : super(key: key);
@@ -15,7 +16,11 @@ class BFBankMainPage extends StatefulWidget {
 class _BFBankMainPageState extends State<BFBankMainPage> {
   final TtsService _ttsService = TtsService();
   final HapticService _hapticService = HapticService();
-  late String userName;
+  final UserStateService _userStateService = UserStateService();
+  
+  String? userName;
+  bool hasAccount = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -28,9 +33,30 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
     });
   }
 
-  void _loadUserData() {
-    final user = IntegratedDummyDataService.getCurrentUser();
-    userName = user.username;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 페이지로 돌아올 때마다 사용자 상태 새로고침
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      await _userStateService.initialize();
+      final user = await IntegratedDummyDataService.getCurrentUser();
+      final accountStatus = await _userStateService.hasAccount();
+      
+      setState(() {
+        userName = user?.username;
+        hasAccount = accountStatus;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Failed to load user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   Future<void> _initializeServices() async {
@@ -48,11 +74,22 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
 
   void _speakMainScreenGuide() {
     // 메인 화면 음성 안내
-    const guide = '''메인 화면입니다.
+    String guide;
+    
+    if (hasAccount) {
+      guide = '''메인 화면입니다.
 결제를 원하시면 왼쪽 위,
 설정을 원하시면 오른쪽 위,
 계좌 조회를 원하시면 왼쪽 아래,
 송금을 원하시면 오른쪽 아래를 눌러주세요.''';
+    } else {
+      guide = '''BF Bank 환영 화면입니다.
+설정을 원하시면 왼쪽 위,
+신분증 인식 디버깅을 원하시면 오른쪽 위,
+더미데이터 모드로 전환하시려면 왼쪽 아래,
+계좌를 개설하시려면 오른쪽 아래를 눌러주세요.''';
+    }
+    
     _ttsService.speak(guide);
   }
 
@@ -65,39 +102,218 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: Colors.white),
+              SizedBox(height: 20),
+              Text(
+                '사용자 정보를 불러오는 중...',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: DefaultPage(
-          upperLeftWidget: _buildButtonContent(
-            'assets/icons/QR.svg',
-            '결제',
-          ),
-          upperRightWidget: _buildButtonContent(
-            'assets/icons/Settings2.svg',
-            '설정',
-          ),
-          lowerLeftWidget: _buildButtonContent(
-            'assets/icons/History2.svg',
-            '조회',
-          ),
-          lowerRightWidget: _buildButtonContent(
-            'assets/icons/Send2.svg',
-            '송금',
-          ),
-          mainWidget: _buildMainContent(),
-          onUpperLeftPress: () => _handleNavigation(context, '결제'),
-          onUpperRightPress: () => _handleNavigation(context, '설정'),
-          onLowerLeftPress: () => _handleNavigation(context, '조회'),
-          onLowerRightPress: () => _handleNavigation(context, '송금'),
-          // 더블탭 TTS 메시지들
-          upperLeftTTS: '결제',
-          upperRightTTS: '설정',
-          lowerLeftTTS: '조회',
-          lowerRightTTS: '송금',
-        ),
+        child: hasAccount ? _buildBankingUI() : _buildAccountCreationUI(),
       ),
     );
+  }
+
+  // 계좌가 있는 사용자용 UI (기존 뱅킹 메뉴)
+  Widget _buildBankingUI() {
+    return DefaultPage(
+      upperLeftWidget: _buildButtonContent(
+        'assets/icons/QR.svg',
+        '결제',
+      ),
+      upperRightWidget: _buildButtonContent(
+        'assets/icons/Settings2.svg',
+        '설정',
+      ),
+      lowerLeftWidget: _buildButtonContent(
+        'assets/icons/History2.svg',
+        '조회',
+      ),
+      lowerRightWidget: _buildButtonContent(
+        'assets/icons/Send2.svg',
+        '송금',
+      ),
+      mainWidget: _buildMainContent(),
+      onUpperLeftPress: () => _handleNavigation(context, '결제'),
+      onUpperRightPress: () => _handleNavigation(context, '설정'),
+      onLowerLeftPress: () => _handleNavigation(context, '조회'),
+      onLowerRightPress: () => _handleNavigation(context, '송금'),
+      // 더블탭 TTS 메시지들
+      upperLeftTTS: '결제',
+      upperRightTTS: '설정',
+      lowerLeftTTS: '조회',
+      lowerRightTTS: '송금',
+    );
+  }
+
+  // 계좌가 없는 사용자용 UI (계좌 개설 중심)
+  Widget _buildAccountCreationUI() {
+    return DefaultPage(
+      upperLeftWidget: _buildButtonContent(
+        'assets/icons/Settings2.svg',
+        '설정',
+      ),
+      upperRightWidget: _buildButtonContent(
+        'assets/icons/Check2.svg',
+        '신분증\n디버깅',
+      ),
+      lowerLeftWidget: _buildButtonContent(
+        'assets/icons/Volume.svg',
+        '더미데이터\n모드',
+      ),
+      lowerRightWidget: _buildButtonContent(
+        'assets/icons/Check.svg',
+        '계좌\n개설하기',
+      ),
+      mainWidget: _buildWelcomeCard(),
+      onUpperLeftPress: () => _handleAccountCreationNavigation(context, '설정'),
+      onUpperRightPress: () => _handleAccountCreationNavigation(context, '신분증 디버깅'),
+      onLowerLeftPress: () => _handleAccountCreationNavigation(context, '더미데이터 모드'),
+      onLowerRightPress: () => _handleAccountCreationNavigation(context, '계좌 개설하기'),
+      // 더블탭 TTS 메시지들
+      upperLeftTTS: '설정',
+      upperRightTTS: '신분증 인식 디버깅',
+      lowerLeftTTS: '더미데이터 모드',
+      lowerRightTTS: '계좌 개설하기',
+    );
+  }
+
+  // 환영 카드 위젯
+  Widget _buildWelcomeCard() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: const Color(0xFF333333),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // BF Bank 로고
+          const Icon(
+            Icons.account_balance,
+            color: Colors.white,
+            size: 80,
+          ),
+          const SizedBox(height: 24),
+          
+          // 환영 메시지
+          const Text(
+            'BF Bank에 오신 것을\n환영합니다!',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          
+          // 서브 메시지
+          const Text(
+            '배리어 프리 금융 서비스로\n모든 고객에게 편리한 뱅킹을 제공합니다',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 18,
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          
+          // 음성 안내 버튼
+          GestureDetector(
+            onTap: () {
+              _hapticService.vibrateCustomSequence('tick');
+              _speakMainScreenGuide();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF444444),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.volume_up,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    '음성 안내 듣기',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 계좌 개설 화면용 네비게이션 핸들러
+  void _handleAccountCreationNavigation(BuildContext context, String feature) {
+    String hapticPattern;
+    switch (feature) {
+      case '설정':
+        hapticPattern = 'tick';
+        break;
+      case '신분증 디버깅':
+        hapticPattern = 'double_tick';
+        break;
+      case '더미데이터 모드':
+        hapticPattern = 'notification';
+        break;
+      case '계좌 개설하기':
+        hapticPattern = 'cheerful_success';
+        break;
+      default:
+        hapticPattern = 'tick';
+    }
+    
+    _hapticService.vibrateCustomSequence(hapticPattern);
+    _ttsService.speak('$feature을 선택하셨습니다.');
+    
+    switch (feature) {
+      case '설정':
+        Navigator.pushNamed(context, '/settings');
+        break;
+      case '신분증 디버깅':
+        Navigator.pushNamed(context, '/developer-options');
+        break;
+      case '더미데이터 모드':
+        _enableDummyDataMode();
+        break;
+      case '계좌 개설하기':
+        Navigator.pushNamed(context, '/create-account');
+        break;
+    }
   }
 
   Widget _buildButtonContent(String asset, String text) {
@@ -147,16 +363,16 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
               color: const Color(0xFF333333),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.volume_up,
                   color: Colors.white,
                   size: 25,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   '음성 안내 듣기',
                   style: TextStyle(
                     color: Colors.white,
@@ -167,9 +383,10 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
             ),
           ),
         ),
+        
         // 환영 메시지
         Text(
-          '$userName 님,\n환영합니다.',
+          '${userName ?? "고객"} 님,\n환영합니다.',
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: Colors.white,
@@ -188,9 +405,26 @@ class _BFBankMainPageState extends State<BFBankMainPage> {
             height: 1.2,
           ),
         ),
-
       ],
     );
+  }
+
+  // 더미 데이터 모드로 전환
+  Future<void> _enableDummyDataMode() async {
+    try {
+      _hapticService.vibrateCustomSequence('notification');
+      _ttsService.speak('더미 데이터 모드로 전환합니다.');
+      
+      await _userStateService.enableDummyDataMode();
+      
+      // 상태 새로고침
+      await _loadUserData();
+      
+      _ttsService.speak('더미 데이터 모드로 전환되었습니다. 모든 뱅킹 서비스를 이용할 수 있습니다.');
+    } catch (e) {
+      print('Failed to enable dummy data mode: $e');
+      _ttsService.speak('더미 데이터 모드 전환에 실패했습니다.');
+    }
   }
 
 

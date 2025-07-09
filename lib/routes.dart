@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'features/navigation/presentation/pages/home_page.dart';
 import 'features/object_detection/presentation/pages/camera_detection_page.dart';
+import 'features/object_detection/presentation/pages/gallery_page.dart';
 import 'features/bfbank/presentation/pages/splash_page.dart';
 import 'features/bfbank/presentation/pages/main_page.dart';
 import 'features/bfbank/presentation/pages/send_main_page.dart';
@@ -11,11 +12,14 @@ import 'features/bfbank/presentation/pages/settings_page.dart';
 import 'features/handwriting_recognition/widgets/benchmark_test_page.dart';
 import 'features/handwriting_recognition/widgets/handwriting_test_page.dart';
 import 'features/bfbank/presentation/pages/developer_options_page.dart';
+import 'features/bfbank/presentation/pages/create_account_main_page.dart';
 
 // 앱 라우팅 관리
 class AppRoutes {
   static const String home = '/';
   static const String camera = '/camera';
+  static const String cameraDetection = '/camera-detection';
+  static const String gallery = '/gallery';
   static const String bfbankMain = '/bfbank-main';
   static const String sendMain = '/send-main';
   static const String checkHistory = '/check-history';
@@ -26,6 +30,7 @@ class AppRoutes {
   static const String benchmarkTest = '/benchmark-test';
   static const String handwritingTest = '/handwriting-test';
   static const String developerOptions = '/developer-options';
+  static const String createAccount = '/create-account';
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     // 애니메이션 없는 페이지 전환을 위한 공통 함수
@@ -43,6 +48,10 @@ class AppRoutes {
         return _buildPageWithoutAnimation(const SplashPage());
       case camera:
         return _buildPageWithoutAnimation(const CameraDetectionPage());
+      case cameraDetection:
+        return _buildPageWithoutAnimation(const CameraDetectionPage());
+      case gallery:
+        return _buildPageWithoutAnimation(const GalleryPage(croppedImages: []));
       case bfbankMain:
         return _buildPageWithoutAnimation(const BFBankMainPage());
       case sendMain:
@@ -78,6 +87,8 @@ class AppRoutes {
         return _buildPageWithoutAnimation(const HandwritingTestPage());
       case developerOptions:
         return _buildPageWithoutAnimation(const DeveloperOptionsPage());
+      case createAccount:
+        return _buildPageWithoutAnimation(const CreateAccountMainPage());
       default:
         return _buildPageWithoutAnimation(
           Scaffold(

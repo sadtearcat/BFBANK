@@ -7,6 +7,8 @@ import '../../data/services/haptic_service.dart';
 import '../../data/services/integrated_dummy_data_service.dart';
 import '../../data/services/global_tts_manager.dart';
 import '../../data/services/settings_storage_service.dart';
+import '../../data/services/user_state_service.dart';
+import '../../data/models/user_info.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -73,7 +75,197 @@ class _SettingsPageState extends State<SettingsPage> {
         },
       ),
       
-      // 사용자 정보
+      // 사용자 상태 초기화
+      SettingItem(
+        type: SettingType.action,
+        title: '사용자 상태 초기화',
+        description: '앱을 처음 설치한 상태로 되돌립니다. 계좌 정보와 더미 데이터가 모두 초기화되어 다시 계좌 개설 과정을 테스트할 수 있습니다',
+        category: '개발자 도구',
+        onAction: () async {
+          _hapticService.vibrateCustomSequence('warning');
+          
+          // 확인 다이얼로그
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              backgroundColor: Colors.grey[900],
+              title: const Text(
+                '사용자 상태 초기화',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                '모든 사용자 데이터와 설정이 초기화됩니다.\n계좌 개설 과정을 다시 테스트할 수 있게 됩니다.\n\n계속하시겠습니까?',
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text(
+                    '취소',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                  ),
+                  child: const Text('초기화'),
+                ),
+              ],
+            ),
+          );
+          
+          if (confirmed == true) {
+            _ttsService.speak('사용자 상태를 초기화합니다.');
+            
+            try {
+              final userStateService = UserStateService();
+              await userStateService.resetUserState();
+              
+              _hapticService.vibrateCustomSequence('success');
+              _ttsService.speak('초기화가 완료되었습니다. 메인 화면으로 이동합니다.');
+              
+              // 메인 화면으로 이동하여 변경사항 확인
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                '/',
+                (route) => false,
+              );
+            } catch (error) {
+              _hapticService.vibrateCustomSequence('error');
+              _ttsService.speak('초기화 중 오류가 발생했습니다.');
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('초기화 실패: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+                 },
+       ),
+       
+       // 현재 상태 확인
+       SettingItem(
+         type: SettingType.action,
+         title: '현재 상태 확인',
+         description: '현재 앱의 사용자 상태와 데이터 소스를 확인합니다. 더미 데이터 모드인지 실제 데이터 모드인지 알 수 있습니다',
+         category: '개발자 도구',
+         onAction: () async {
+           _hapticService.vibrateCustomSequence('tick');
+           
+           try {
+             final userStateService = UserStateService();
+             final hasAccount = await userStateService.hasAccount();
+             final useDummyData = await userStateService.shouldUseDummyData();
+             final currentUser = await userStateService.getCurrentUser();
+             final currentAccount = await userStateService.getCurrentAccount();
+             
+             String statusMessage;
+             Color statusColor;
+             
+             if (!hasAccount) {
+               statusMessage = '신규 사용자 모드\n계좌 개설 필요';
+               statusColor = Colors.orange;
+             } else if (useDummyData) {
+               statusMessage = '더미 데이터 모드\n테스트용 계좌 사용 중';
+               statusColor = Colors.blue;
+             } else {
+               statusMessage = '실제 데이터 모드\n정식 계좌 사용 중';
+               statusColor = Colors.green;
+             }
+             
+             final detailMessage = '''
+사용자: ${currentUser?.username ?? '없음'}
+계좌번호: ${currentAccount?.accountNo ?? '없음'}
+잔액: ${currentAccount?.accountBalance ?? 0}원
+은행: ${currentAccount?.bankName ?? '없음'}
+             ''';
+             
+             _ttsService.speak('현재 상태: $statusMessage');
+             
+             showDialog(
+               context: context,
+               builder: (context) => AlertDialog(
+                 backgroundColor: Colors.grey[900],
+                 title: Row(
+                   children: [
+                     Container(
+                       width: 12,
+                       height: 12,
+                       decoration: BoxDecoration(
+                         color: statusColor,
+                         shape: BoxShape.circle,
+                       ),
+                     ),
+                     const SizedBox(width: 8),
+                     const Text(
+                       '현재 앱 상태',
+                       style: TextStyle(color: Colors.white),
+                     ),
+                   ],
+                 ),
+                 content: Column(
+                   mainAxisSize: MainAxisSize.min,
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Container(
+                       padding: const EdgeInsets.all(12),
+                       decoration: BoxDecoration(
+                         color: statusColor.withOpacity(0.2),
+                         borderRadius: BorderRadius.circular(8),
+                         border: Border.all(color: statusColor),
+                       ),
+                       child: Text(
+                         statusMessage,
+                         style: TextStyle(
+                           color: statusColor,
+                           fontWeight: FontWeight.bold,
+                           fontSize: 16,
+                         ),
+                       ),
+                     ),
+                     const SizedBox(height: 16),
+                     const Text(
+                       '상세 정보:',
+                       style: TextStyle(
+                         color: Colors.white,
+                         fontWeight: FontWeight.bold,
+                       ),
+                     ),
+                     const SizedBox(height: 8),
+                     Text(
+                       detailMessage,
+                       style: const TextStyle(
+                         color: Colors.white70,
+                         fontFamily: 'monospace',
+                       ),
+                     ),
+                   ],
+                 ),
+                 actions: [
+                   TextButton(
+                     onPressed: () => Navigator.pop(context),
+                     child: const Text(
+                       '확인',
+                       style: TextStyle(color: Colors.blue),
+                     ),
+                   ),
+                 ],
+               ),
+             );
+           } catch (error) {
+             _hapticService.vibrateCustomSequence('error');
+             _ttsService.speak('상태 확인 중 오류가 발생했습니다.');
+           }
+         },
+       ),
+       
+       // 사용자 정보
       SettingItem(
         type: SettingType.info,
         title: '사용자 정보',
@@ -553,8 +745,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildSettingCard(SettingItem item) {
-    final user = IntegratedDummyDataService.getCurrentUser();
-    
     Color cardColor;
     Color borderColor;
     
@@ -641,12 +831,29 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               
               // 사용자 정보인 경우 추가 정보 표시
-              if (item.type == SettingType.info) ...[
-                const SizedBox(height: 10),
-                Text('${user.username} 님', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(user.phoneNumber, style: const TextStyle(color: Colors.white70, fontSize: 16)),
-              ],
+              if (item.type == SettingType.info) 
+                FutureBuilder<UserInfo?>(
+                  future: IntegratedDummyDataService.getCurrentUser(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      final user = snapshot.data!;
+                      return Column(
+                        children: [
+                          const SizedBox(height: 10),
+                          Text('${user.username} 님', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(user.phoneNumber, style: const TextStyle(color: Colors.white70, fontSize: 16)),
+                        ],
+                      );
+                    }
+                    return const Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Text('사용자 정보 로딩 중...', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                      ],
+                    );
+                  },
+                ),
             ],
           ),
         ),
